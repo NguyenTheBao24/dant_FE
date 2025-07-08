@@ -8,11 +8,11 @@ const ForgotPassword = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Simulate sending reset email
+    // Mô phỏng gửi email đặt lại mật khẩu
     console.log('Reset password for:', email);
     setIsSubmitted(true);
-    
-    // Auto redirect after 3 seconds
+
+    // Tự động chuyển hướng sau 3 giây
     setTimeout(() => {
       navigate('/login');
     }, 3000);
@@ -21,7 +21,7 @@ const ForgotPassword = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
-        {/* Header */}
+        {/* Đầu trang */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-2 mb-4">
             <span className="text-3xl">🏠</span>
@@ -59,7 +59,7 @@ const ForgotPassword = () => {
             </button>
           </form>
         ) : (
-          /* Success Message */
+          /* Thông báo thành công */
           <div className="text-center py-8">
             <div className="text-6xl mb-4">📧</div>
             <h3 className="text-xl font-bold text-green-600 mb-2">
@@ -76,7 +76,7 @@ const ForgotPassword = () => {
           </div>
         )}
 
-        {/* Footer */}
+        {/* Chân trang */}
         <div className="mt-8 text-center space-y-4">
           <p className="text-gray-600">
             Nhớ lại mật khẩu?{' '}
@@ -87,7 +87,7 @@ const ForgotPassword = () => {
               Đăng nhập ngay
             </button>
           </p>
-          
+
           <div className="flex items-center space-x-4">
             <button
               onClick={() => navigate('/')}

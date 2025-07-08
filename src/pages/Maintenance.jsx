@@ -5,7 +5,7 @@ const Maintenance = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header */}
+      {/* Đầu trang */}
       <div className="bg-white shadow-sm border-b px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -17,7 +17,7 @@ const Maintenance = () => {
             </button>
             <h1 className="text-2xl font-bold text-gray-800">Bảo Trì & Sửa Chữa</h1>
           </div>
-          
+
           <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
             + Báo cáo sự cố
           </button>
@@ -29,7 +29,7 @@ const Maintenance = () => {
           <div className="text-6xl mb-4">🔧</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">Bảo Trì & Sửa Chữa</h2>
           <p className="text-gray-600 mb-8">Trang quản lý bảo trì đang được phát triển...</p>
-          
+
           <div className="grid md:grid-cols-3 gap-4 max-w-md mx-auto">
             <button
               onClick={() => navigate('/home')}

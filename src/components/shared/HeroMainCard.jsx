@@ -9,7 +9,7 @@ const HeroMainCard = ({
 }) => {
     return (
         <div className="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-105 group">
-            {/* Glowing effect */}
+            {/* Hiệu ứng phát sáng */}
             <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 via-pink-400/20 to-blue-400/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
 
             <div className="relative z-10">

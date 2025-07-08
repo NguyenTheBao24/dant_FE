@@ -9,7 +9,7 @@ const Register = () => {
     phone: '',
     password: '',
     confirmPassword: '',
-    userType: 'tenant' // tenant, landlord
+    userType: 'tenant' // người thuê, chủ trọ
   });
 
   const handleInputChange = (e) => {
@@ -26,16 +26,16 @@ const Register = () => {
       alert('Mật khẩu xác nhận không khớp!');
       return;
     }
-    // Simulate registration
+    // Mô phỏng đăng ký
     console.log('Register:', formData);
-    // Redirect to login after successful registration
+    // Chuyển hướng đến trang đăng nhập sau khi đăng ký thành công
     navigate('/login');
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100 flex items-center justify-center px-4 py-8">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
-        {/* Header */}
+        {/* Đầu trang */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-2 mb-4">
             <span className="text-3xl">🏠</span>
@@ -154,7 +154,7 @@ const Register = () => {
           </button>
         </form>
 
-        {/* Footer */}
+        {/* Chân trang */}
         <div className="mt-8 text-center space-y-4">
           <p className="text-gray-600">
             Đã có tài khoản?{' '}

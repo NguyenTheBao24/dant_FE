@@ -46,14 +46,14 @@ const AmenitiesSection = () => {
 
     return (
         <section id="amenities" className="relative py-24 overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-            {/* Decorative background elements */}
+            {/* Các phần tử nền trang trí */}
             <div className="absolute inset-0">
                 <div className="absolute top-20 left-10 w-64 h-64 bg-blue-200/30 rounded-full mix-blend-multiply filter blur-2xl"></div>
                 <div className="absolute bottom-20 right-10 w-80 h-80 bg-purple-200/30 rounded-full mix-blend-multiply filter blur-2xl"></div>
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-200/20 rounded-full mix-blend-multiply filter blur-3xl"></div>
             </div>
 
-            {/* Floating geometric shapes */}
+            {/* Các hình học bay lơ lửng */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-1/4 left-1/6 w-16 h-16 border border-blue-300/30 rounded-full animate-float"></div>
                 <div className="absolute top-3/4 right-1/5 w-12 h-12 border border-purple-300/30 rounded-lg transform rotate-45 animate-float animation-delay-2000"></div>
@@ -62,7 +62,7 @@ const AmenitiesSection = () => {
             </div>
 
             <div className="container mx-auto px-4 relative z-10">
-                {/* Section header */}
+                {/* Tiêu đề phần */}
                 <div className="text-center mb-20">
                     <div className="inline-flex items-center bg-white/60 backdrop-blur-sm border border-white/40 rounded-full px-6 py-2 mb-6 shadow-lg">
                         <span className="w-3 h-3 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full mr-3 animate-pulse"></span>
@@ -85,11 +85,11 @@ const AmenitiesSection = () => {
                         <span className="text-indigo-600 font-medium">Mọi thứ bạn cần đều có sẵn tại đây!</span>
                     </p>
 
-                    {/* Decorative line */}
+                    {/* Đường trang trí */}
                     <div className="w-32 h-1 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 rounded-full mx-auto mt-8"></div>
                 </div>
 
-                {/* Amenities grid */}
+                {/* Lưới tiện ích */}
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
                     {amenities.map((amenity, index) => (
                         <ServiceCard

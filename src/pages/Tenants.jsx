@@ -79,7 +79,7 @@ const Tenants = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header */}
+      {/* Đầu trang */}
       <div className="bg-white shadow-sm border-b px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -91,7 +91,7 @@ const Tenants = () => {
             </button>
             <h1 className="text-2xl font-bold text-gray-800">Quản Lý Người Thuê</h1>
           </div>
-          
+
           <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
             + Thêm người thuê mới
           </button>
@@ -99,7 +99,7 @@ const Tenants = () => {
       </div>
 
       <div className="p-6">
-        {/* Search */}
+        {/* Tìm kiếm */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
           <div className="grid md:grid-cols-2 gap-4">
             <div>
@@ -112,7 +112,7 @@ const Tenants = () => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-            
+
             <div className="flex items-end">
               <button className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
                 Xuất danh sách
@@ -121,7 +121,7 @@ const Tenants = () => {
           </div>
         </div>
 
-        {/* Stats */}
+        {/* Thống kê */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center space-x-4">
@@ -135,7 +135,7 @@ const Tenants = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -148,7 +148,7 @@ const Tenants = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
@@ -163,7 +163,7 @@ const Tenants = () => {
           </div>
         </div>
 
-        {/* Tenants List */}
+        {/* Danh sách người thuê */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full">
@@ -247,7 +247,7 @@ const Tenants = () => {
           </div>
         </div>
 
-        {/* Floating Action */}
+        {/* Nút hành động nổi */}
         <div className="fixed bottom-6 right-6">
           <button
             onClick={() => navigate('/bills')}

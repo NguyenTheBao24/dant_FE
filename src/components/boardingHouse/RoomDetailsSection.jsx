@@ -1,12 +1,22 @@
 import RoomCard from './RoomCard';
-import logoHome from '../../assets/logoHome.png';
-import bed from '../../assets/bed.png';
-import bed2 from '../../assets/bed2.png';
-import premium from '../../assets/premium.png';
-import internet from '../../assets/internet.png';
-import basket from '../../assets/basket.png';
-import broom from '../../assets/broom.png';
-import support from '../../assets/support.png';
+
+// Import ảnh cho phòng đơn
+import phongDon1 from '../../assets/anh_phong_don/anh1.jpg';
+import phongDon2 from '../../assets/anh_phong_don/anh2.jpg';
+import phongDon3 from '../../assets/anh_phong_don/anh3.jpg';
+import phongDon4 from '../../assets/anh_phong_don/anh4.jpg';
+
+// Import ảnh cho phòng đôi
+import phongDoi1 from '../../assets/anh_phong_doi/anh1.jpg';
+import phongDoi2 from '../../assets/anh_phong_doi/anh2.jpg';
+import phongDoi3 from '../../assets/anh_phong_doi/anh3.jpg';
+import phongDoi4 from '../../assets/anh_phong_doi/anh4.jpg';
+
+// Import ảnh cho phòng VIP
+import phongVip1 from '../../assets/phong_vip/anh1.jpg';
+import phongVip2 from '../../assets/phong_vip/anh2.jpg';
+import phongVip3 from '../../assets/phong_vip/anh3.jpg';
+import phongVip4 from '../../assets/phong_vip/anh4.jpg';
 
 const RoomDetailsSection = ({ onSetRoomType, onScrollToSection }) => {
     const roomDetails = [
@@ -16,10 +26,10 @@ const RoomDetailsSection = ({ onSetRoomType, onScrollToSection }) => {
             price: '3.500.000đ/tháng',
             area: '25m²',
             images: [
-                <img src={logoHome} alt="Home" className="w-12 h-12" />,
-                <img src={bed} alt="Bed" className="w-12 h-12" />,
-                <img src={support} alt="Air Conditioning" className="w-12 h-12" />,
-                <img src={internet} alt="Wifi" className="w-12 h-12" />
+                <img src={phongDon1} alt="Phòng đơn 1" className="w-full h-full object-cover rounded-lg" />,
+                <img src={phongDon2} alt="Phòng đơn 2" className="w-full h-full object-cover rounded-lg" />,
+                <img src={phongDon3} alt="Phòng đơn 3" className="w-full h-full object-cover rounded-lg" />,
+                <img src={phongDon4} alt="Phòng đơn 4" className="w-full h-full object-cover rounded-lg" />
             ],
             features: [
                 'Điều hòa 2 chiều',
@@ -40,13 +50,10 @@ const RoomDetailsSection = ({ onSetRoomType, onScrollToSection }) => {
             price: '5.000.000đ/tháng',
             area: '35m²',
             images: [
-                <img src={premium} alt="Premium Building" className="w-12 h-12" />,
-                <div className="flex space-x-1">
-                    <img src={bed2} alt="Double Bed" className="w-8 h-8" />
-                    <img src={bed2} alt="Double Bed" className="w-8 h-8" />
-                </div>,
-                <img src={support} alt="Air Conditioning" className="w-12 h-12" />,
-                <img src={premium} alt="Premium" className="w-12 h-12" />
+                <img src={phongDoi1} alt="Phòng đôi 1" className="w-full h-full object-cover rounded-lg" />,
+                <img src={phongDoi2} alt="Phòng đôi 2" className="w-full h-full object-cover rounded-lg" />,
+                <img src={phongDoi3} alt="Phòng đôi 3" className="w-full h-full object-cover rounded-lg" />,
+                <img src={phongDoi4} alt="Phòng đôi 4" className="w-full h-full object-cover rounded-lg" />
             ],
             features: [
                 'Điều hòa inverter',
@@ -68,10 +75,10 @@ const RoomDetailsSection = ({ onSetRoomType, onScrollToSection }) => {
             price: '7.500.000đ/tháng',
             area: '45m²',
             images: [
-                <img src={premium} alt="VIP Building" className="w-12 h-12" />,
-                <img src={basket} alt="Kitchen" className="w-12 h-12" />,
-                <img src={broom} alt="Bathroom" className="w-12 h-12" />,
-                <img src={premium} alt="VIP Premium" className="w-12 h-12" />
+                <img src={phongVip1} alt="Phòng VIP 1" className="w-full h-full object-cover rounded-lg" />,
+                <img src={phongVip2} alt="Phòng VIP 2" className="w-full h-full object-cover rounded-lg" />,
+                <img src={phongVip3} alt="Phòng VIP 3" className="w-full h-full object-cover rounded-lg" />,
+                <img src={phongVip4} alt="Phòng VIP 4" className="w-full h-full object-cover rounded-lg" />
             ],
             features: [
                 'Điều hòa multi inverter',

@@ -37,14 +37,14 @@ const HeroSection = ({ onScrollToSection }) => {
 
     return (
         <section id="hero" className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900">
-            {/* Animated Background Elements */}
+            {/* Các phần tử nền động */}
             <div className="absolute inset-0">
                 <div className="absolute top-20 left-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
                 <div className="absolute top-40 right-10 w-80 h-80 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-2000"></div>
                 <div className="absolute -bottom-8 left-20 w-96 h-96 bg-indigo-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-4000"></div>
             </div>
 
-            {/* Floating decorative shapes */}
+            {/* Các hình trang trí bay lơ lửng */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-1/4 left-1/4 w-16 h-16 border-2 border-white/20 rounded-full animate-float"></div>
                 <div className="absolute top-3/4 right-1/4 w-12 h-12 border-2 border-purple-300/30 rounded-full animate-float animation-delay-2000"></div>
@@ -96,12 +96,12 @@ const HeroSection = ({ onScrollToSection }) => {
                             </button>
                         </div>
 
-                        {/* Stats - Using Shared Component */}
+                        {/* Thống kê - Sử dụng Shared Component */}
                         <StatsGrid />
                     </div>
 
                     <div className="relative">
-                        {/* Main Card - Using Shared Component */}
+                        {/* Card chính - Sử dụng Shared Component */}
                         <HeroMainCard
                             logo={logoHome}
                             logoAlt="Nhà Trọ Logo"
@@ -109,13 +109,13 @@ const HeroSection = ({ onScrollToSection }) => {
                             services={heroServices}
                         />
 
-                        {/* Floating price badge - Using Shared Component */}
+                        {/* Badge giá bay lơ lửng - Sử dụng Shared Component */}
                         <PriceFloatingBadge />
                     </div>
                 </div>
             </div>
 
-            {/* Scroll indicator */}
+            {/* Chỉ báo cuộn */}
             <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white animate-bounce">
                 <div className="flex flex-col items-center">
                     <span className="text-sm mb-2 opacity-80">Cuộn xuống</span>

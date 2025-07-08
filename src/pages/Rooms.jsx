@@ -34,16 +34,16 @@ const Rooms = () => {
   };
 
   const filteredRooms = rooms.filter(room => {
-    const matchesSearch = room.id.toString().includes(searchTerm) || 
-                         room.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (room.tenant && room.tenant.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesSearch = room.id.toString().includes(searchTerm) ||
+      room.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (room.tenant && room.tenant.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesFilter = filterStatus === 'all' || room.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header */}
+      {/* Đầu trang */}
       <div className="bg-white shadow-sm border-b px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -55,14 +55,14 @@ const Rooms = () => {
             </button>
             <h1 className="text-2xl font-bold text-gray-800">Quản Lý Phòng</h1>
           </div>
-          
+
           <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
             + Thêm phòng mới
           </button>
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Bộ lọc */}
       <div className="p-6">
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
           <div className="grid md:grid-cols-3 gap-4">
@@ -76,7 +76,7 @@ const Rooms = () => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-            
+
             <div>
               <label className="block text-gray-700 font-medium mb-2">Trạng thái</label>
               <select
@@ -99,7 +99,7 @@ const Rooms = () => {
           </div>
         </div>
 
-        {/* Stats */}
+        {/* Thống kê */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-xl shadow-sm p-4">
             <div className="flex items-center space-x-3">
@@ -112,7 +112,7 @@ const Rooms = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl shadow-sm p-4">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -124,7 +124,7 @@ const Rooms = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl shadow-sm p-4">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
@@ -136,7 +136,7 @@ const Rooms = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl shadow-sm p-4">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
@@ -150,7 +150,7 @@ const Rooms = () => {
           </div>
         </div>
 
-        {/* Rooms List */}
+        {/* Danh sách phòng */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full">

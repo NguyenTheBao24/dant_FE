@@ -18,10 +18,10 @@ const Footer = ({ onScrollToSection }) => {
   const location = useLocation();
 
   const handleScrollToSection = (sectionId) => {
-    // If not on landing page, navigate to landing page first
+    // Nếu không ở trang chủ, điều hướng về trang chủ trước
     if (location.pathname !== '/') {
       navigate('/');
-      // Wait for navigation to complete then scroll
+      // Đợi điều hướng hoàn thành rồi scroll
       setTimeout(() => {
         const element = document.getElementById(sectionId);
         if (element) {
@@ -29,10 +29,10 @@ const Footer = ({ onScrollToSection }) => {
         }
       }, 300);
     } else if (onScrollToSection) {
-      // If on landing page, use the scroll function
+      // Nếu ở trang chủ, sử dụng hàm scroll
       onScrollToSection(sectionId);
     } else {
-      // Fallback: direct scroll if no onScrollToSection function
+      // Dự phòng: scroll trực tiếp nếu không có hàm onScrollToSection
       const element = document.getElementById(sectionId);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth' });
@@ -40,7 +40,7 @@ const Footer = ({ onScrollToSection }) => {
     }
   };
 
-  // Social media links
+      // Liên kết mạng xã hội
   const socialLinks = {
     facebook: 'https://www.facebook.com/bao250603',
     telegram: 'https://t.me/bao250603', // Thay đổi username cho phù hợp
@@ -141,7 +141,7 @@ const Footer = ({ onScrollToSection }) => {
         </div>
 
         <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2024 Nhà Trọ Cao Cấp. All rights reserved.</p>
+          <p>&copy; 2025 Nhà Trọ Cao Cấp. All rights reserved.</p>
         </div>
       </div>
     </footer>

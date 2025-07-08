@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// Import layout components
+// Import các component layout
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 
-// Import boarding house components
+// Import các component boarding house
 import {
   HeroSection,
   RoomDetailsSection,
@@ -54,22 +54,22 @@ const BoardingHouseShowcase = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Đầu trang */}
       <Header onScrollToSection={scrollToSection} />
 
-      {/* Hero Section */}
+      {/* Phần Hero */}
       <HeroSection onScrollToSection={scrollToSection} />
 
-      {/* Room Details Section */}
+      {/* Phần chi tiết phòng */}
       <RoomDetailsSection
         onSetRoomType={handleSetRoomType}
         onScrollToSection={scrollToSection}
       />
 
-      {/* Amenities Section */}
+      {/* Phần tiện ích */}
       <AmenitiesSection />
 
-      {/* Contact Form Section */}
+      {/* Phần form liên hệ */}
       <ContactFormSection
         contactForm={contactForm}
         setContactForm={setContactForm}
@@ -77,7 +77,7 @@ const BoardingHouseShowcase = () => {
         isSubmitted={isSubmitted}
       />
 
-      {/* Footer */}
+      {/* Chân trang */}
       <Footer onScrollToSection={scrollToSection} />
     </div>
   );

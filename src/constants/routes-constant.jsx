@@ -1,6 +1,6 @@
 import { lazy } from 'react';
 
-// Lazy loading components
+// Các component lazy loading
 const BoardingHouseShowcase = lazy(() => import('../pages/boardingHouse/BoardingHouseShowcase'));
 const Login = lazy(() => import('../pages/Login'));
 const Register = lazy(() => import('../pages/Register'));
@@ -12,7 +12,7 @@ const Bills = lazy(() => import('../pages/Bills'));
 const Maintenance = lazy(() => import('../pages/Maintenance'));
 const Settings = lazy(() => import('../pages/Settings'));
 
-// Placeholder component for Coming Soon pages
+// Component placeholder cho các trang Coming Soon
 const ComingSoon = ({ title }) => (
   <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
     <div className="text-center">
@@ -37,7 +37,7 @@ const ComingSoon = ({ title }) => (
   </div>
 );
 
-// 404 Not Found component
+// Component 404 Not Found
 const NotFound = () => (
   <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-100 flex items-center justify-center px-4">
     <div className="text-center">
@@ -68,9 +68,9 @@ const NotFound = () => (
   </div>
 );
 
-// Main routes configuration
+// Cấu hình routes chính
 export const ROUTES_CONFIG = [
-  // Public Routes
+  // Routes công khai
   {
     id: 'landing',
     path: '/',
@@ -81,7 +81,7 @@ export const ROUTES_CONFIG = [
     layout: 'public'
   },
 
-  // Auth Routes
+  // Routes xác thực
   {
     id: 'login',
     path: '/auth/login',
@@ -110,7 +110,7 @@ export const ROUTES_CONFIG = [
     layout: 'auth'
   },
 
-  // Protected Routes
+  // Routes được bảo vệ
   {
     id: 'home',
     path: '/home',
@@ -182,7 +182,7 @@ export const ROUTES_CONFIG = [
     breadcrumb: 'Cài đặt'
   },
 
-  // Landlord Routes (Coming Soon)
+  // Routes chủ trọ (Sắp ra mắt)
   {
     id: 'landlord',
     path: '/landlord',
@@ -204,7 +204,7 @@ export const ROUTES_CONFIG = [
     comingSoon: true
   },
 
-  // Admin Routes (Coming Soon)
+  // Routes quản trị (Sắp ra mắt)
   {
     id: 'admin',
     path: '/admin',
@@ -272,7 +272,7 @@ export const ROUTES_CONFIG = [
     comingSoon: true
   },
 
-  // 404 Route
+  // Route 404
   {
     id: 'not-found',
     path: '*',
@@ -284,7 +284,7 @@ export const ROUTES_CONFIG = [
   }
 ];
 
-// Helper functions
+// Hàm tiện ích
 export const getRouteByPath = (path) => {
   return ROUTES_CONFIG.find(route => route.path === path);
 };
@@ -309,7 +309,7 @@ export const getAllRoutes = () => {
   return ROUTES_CONFIG;
 };
 
-// Legacy route constants for backward compatibility
+// Hằng số route cũ để tương thích ngược
 export const PUBLIC_ROUTES = {
   LANDING: '/',
   BOARDING_HOUSE: '/boarding-house',

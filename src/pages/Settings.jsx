@@ -5,7 +5,7 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header */}
+      {/* Đầu trang */}
       <div className="bg-white shadow-sm border-b px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -25,7 +25,7 @@ const Settings = () => {
           <div className="text-6xl mb-4">⚙️</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">Cài Đặt Hệ Thống</h2>
           <p className="text-gray-600 mb-8">Trang cài đặt đang được phát triển...</p>
-          
+
           <div className="grid md:grid-cols-4 gap-4 max-w-lg mx-auto">
             <button
               onClick={() => navigate('/home')}

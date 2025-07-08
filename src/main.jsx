@@ -6,7 +6,7 @@ import './index.css';
 // Tạo một hàm để kiểm tra và xử lý token khi ứng dụng khởi động
 const initializeApp = () => {
   // Thêm các logic khởi tạo ở đây nếu cần
-  // Ví dụ: kiểm tra token, fetch user info, etc.
+  // Ví dụ: kiểm tra token, lấy thông tin người dùng, v.v.
 };
 
 // Khởi tạo ứng dụng
