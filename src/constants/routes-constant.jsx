@@ -2,7 +2,7 @@ import { lazy } from 'react';
 
 // Các component lazy loading
 const BoardingHouseShowcase = lazy(() => import('../pages/boardingHouse/BoardingHouseShowcase'));
-const Login = lazy(() => import('../pages/Login'));
+const Login = lazy(() => import('../pages/login/Login'));
 const Register = lazy(() => import('../pages/Register'));
 const ForgotPassword = lazy(() => import('../pages/ForgotPassword'));
 const Home = lazy(() => import('../pages/Home'));
