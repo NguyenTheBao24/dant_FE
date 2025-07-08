@@ -18,7 +18,7 @@ const Router = () => {
         <Routes>
           {ROUTES_CONFIG.map((route) => {
             const Component = route.component;
-            
+
             return (
               <Route
                 key={route.id}

@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faMapMarkerAlt,
@@ -15,10 +15,28 @@ import logoHome from '../../assets/logoHome.png';
 
 const Footer = ({ onScrollToSection }) => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleScrollToSection = (sectionId) => {
-    if (onScrollToSection) {
+    // If not on landing page, navigate to landing page first
+    if (location.pathname !== '/') {
+      navigate('/');
+      // Wait for navigation to complete then scroll
+      setTimeout(() => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 300);
+    } else if (onScrollToSection) {
+      // If on landing page, use the scroll function
       onScrollToSection(sectionId);
+    } else {
+      // Fallback: direct scroll if no onScrollToSection function
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   };
 
@@ -58,8 +76,8 @@ const Footer = ({ onScrollToSection }) => {
             <h4 className="text-lg font-bold mb-4">Liên kết nhanh</h4>
             <ul className="space-y-2 text-gray-400">
               <li><button onClick={() => handleScrollToSection('hero')} className="hover:text-white transition">Trang chủ</button></li>
-              <li><button onClick={() => navigate('/boarding-house')} className="hover:text-white transition">Phòng trọ</button></li>
-              <li><button onClick={() => handleScrollToSection('services')} className="hover:text-white transition">Dịch vụ</button></li>
+              <li><button onClick={() => handleScrollToSection('rooms')} className="hover:text-white transition">Các loại phòng</button></li>
+              <li><button onClick={() => handleScrollToSection('amenities')} className="hover:text-white transition">Tiện ích</button></li>
               <li><button onClick={() => handleScrollToSection('contact')} className="hover:text-white transition">Liên hệ</button></li>
             </ul>
           </div>
@@ -69,7 +87,7 @@ const Footer = ({ onScrollToSection }) => {
             <ul className="space-y-3 text-gray-400">
               <li className="flex items-center space-x-2">
                 <FontAwesomeIcon icon={faMapMarkerAlt} className="text-blue-400" />
-                <span>P. Nguyễn Trác, Yên Nghĩa, Hà Đông, Hà Nội</span>
+                <span>P. Nguyễn Trác, Yên Nghĩa, Hà Đông, Hà Nội (gần bến xe Yên Nghĩa)</span>
               </li>
               <li className="flex items-center space-x-2">
                 <FontAwesomeIcon icon={faPhone} className="text-green-400" />

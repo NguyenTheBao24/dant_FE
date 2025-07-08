@@ -1,8 +1,7 @@
 import { lazy } from 'react';
 
 // Lazy loading components
-const Landing = lazy(() => import('../pages/landing/Landing'));
-const BoardingHouseShowcase = lazy(() => import('../pages/BoardingHouseShowcase'));
+const BoardingHouseShowcase = lazy(() => import('../pages/boardingHouse/BoardingHouseShowcase'));
 const Login = lazy(() => import('../pages/Login'));
 const Register = lazy(() => import('../pages/Register'));
 const ForgotPassword = lazy(() => import('../pages/ForgotPassword'));
@@ -21,13 +20,13 @@ const ComingSoon = ({ title }) => (
       <h1 className="text-3xl font-bold text-gray-800 mb-4">{title}</h1>
       <p className="text-gray-600 mb-8">Trang này đang được phát triển...</p>
       <div className="space-x-4">
-        <button 
+        <button
           onClick={() => window.history.back()}
           className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
         >
           ← Quay lại
         </button>
-        <button 
+        <button
           onClick={() => window.location.href = '/'}
           className="px-6 py-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition"
         >
@@ -46,19 +45,19 @@ const NotFound = () => (
       <h1 className="text-3xl font-bold text-gray-800 mb-4">Trang không tìm thấy</h1>
       <p className="text-gray-600 mb-8">Trang bạn đang tìm kiếm không tồn tại hoặc đã bị di chuyển.</p>
       <div className="space-x-4">
-        <button 
+        <button
           onClick={() => window.history.back()}
           className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
         >
           ← Quay lại
         </button>
-        <button 
+        <button
           onClick={() => window.location.href = '/'}
           className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
         >
           Về trang chủ
         </button>
-        <button 
+        <button
           onClick={() => window.location.href = '/auth/login'}
           className="px-6 py-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition"
         >
@@ -75,22 +74,13 @@ export const ROUTES_CONFIG = [
   {
     id: 'landing',
     path: '/',
-    component: Landing,
-    title: 'Trang chủ',
-    isAuth: false,
-    isPublic: true,
-    layout: 'public'
-  },
-  {
-    id: 'boarding-house',
-    path: '/boarding-house',
     component: BoardingHouseShowcase,
-    title: 'Nhà Trọ',
+    title: 'Nhà Trọ Cao Cấp',
     isAuth: false,
     isPublic: true,
     layout: 'public'
   },
-  
+
   // Auth Routes
   {
     id: 'login',
@@ -119,7 +109,7 @@ export const ROUTES_CONFIG = [
     isPublic: true,
     layout: 'auth'
   },
-  
+
   // Protected Routes
   {
     id: 'home',
@@ -191,7 +181,7 @@ export const ROUTES_CONFIG = [
     layout: 'dashboard',
     breadcrumb: 'Cài đặt'
   },
-  
+
   // Landlord Routes (Coming Soon)
   {
     id: 'landlord',
@@ -213,7 +203,7 @@ export const ROUTES_CONFIG = [
     layout: 'dashboard',
     comingSoon: true
   },
-  
+
   // Admin Routes (Coming Soon)
   {
     id: 'admin',
@@ -281,7 +271,7 @@ export const ROUTES_CONFIG = [
     role: 'admin',
     comingSoon: true
   },
-  
+
   // 404 Route
   {
     id: 'not-found',

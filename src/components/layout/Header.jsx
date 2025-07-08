@@ -17,10 +17,16 @@ const Header = ({ onScrollToSection }) => {
         if (element) {
           element.scrollIntoView({ behavior: 'smooth' });
         }
-      }, 100);
+      }, 300);
     } else if (onScrollToSection) {
       // If on landing page, use the scroll function
       onScrollToSection(sectionId);
+    } else {
+      // Fallback: direct scroll if no onScrollToSection function
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
     }
     setIsMenuOpen(false);
   };
@@ -67,16 +73,16 @@ const Header = ({ onScrollToSection }) => {
               Trang chủ
             </button>
             <button
-              onClick={() => handleNavigation('/boarding-house')}
+              onClick={() => handleScrollToSection('rooms')}
               className="text-gray-600 hover:text-blue-600 transition"
             >
-              Phòng trọ
+              Các loại phòng
             </button>
             <button
-              onClick={() => handleScrollToSection('services')}
+              onClick={() => handleScrollToSection('amenities')}
               className="text-gray-600 hover:text-blue-600 transition"
             >
-              Dịch vụ
+              Tiện ích
             </button>
             <button
               onClick={() => handleScrollToSection('contact')}
@@ -114,16 +120,16 @@ const Header = ({ onScrollToSection }) => {
                 Trang chủ
               </button>
               <button
-                onClick={() => handleNavigation('/boarding-house')}
+                onClick={() => handleScrollToSection('rooms')}
                 className="text-gray-600 hover:text-blue-600 transition text-left"
               >
-                Phòng trọ
+                Các loại phòng
               </button>
               <button
-                onClick={() => handleScrollToSection('services')}
+                onClick={() => handleScrollToSection('amenities')}
                 className="text-gray-600 hover:text-blue-600 transition text-left"
               >
-                Dịch vụ
+                Tiện ích
               </button>
               <button
                 onClick={() => handleScrollToSection('contact')}
