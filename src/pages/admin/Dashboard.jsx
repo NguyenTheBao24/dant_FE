@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { CustomersTab } from "@/components/admin/dashboard/customers-tab"
@@ -17,6 +17,7 @@ import { Badge } from "@/components/admin/ui/badge"
 import { Key } from "lucide-react"
 
 import { revenueData, tenantData, notifications, expenseCategories, hostels } from "@/data/dashboard-data"
+import { listHostels, updateManager as updateManagerApi } from "@/services/hostels.service"
 
 export default function Dashboard() {
     const [activeTab, setActiveTab] = useState("overview")
@@ -67,7 +68,25 @@ export default function Dashboard() {
         setTenants(prev => prev.filter(t => t.id !== tenant.id))
     }
 
-    const handleManagerAction = (action, manager) => {
+    useEffect(() => {
+        const url = import.meta.env.VITE_SUPABASE_URL
+        const key = import.meta.env.VITE_SUPABASE_ANON_KEY
+        if (!url || !key) return
+        ;(async () => {
+            try {
+                const data = await listHostels()
+                if (Array.isArray(data) && data.length) {
+                    // Expecting hostels_view rows with nested manager
+                    setHostelList(data)
+                    setSelectedHostel(data[0])
+                }
+            } catch (err) {
+                console.error('Load hostels failed', err)
+            }
+        })()
+    }, [])
+
+    const handleManagerAction = async (action, manager) => {
         switch (action) {
             case "contact":
                 window.open(`tel:${manager.phone}`)
@@ -80,9 +99,19 @@ export default function Dashboard() {
                 setIsManagerDialogOpen(true)
                 break
             case "update_manager": {
-                // Persist manager updates into selectedHostel and hostelList
                 if (!selectedHostel) break
-                const updatedHostel = { ...selectedHostel, manager: { ...selectedHostel.manager, ...manager } }
+                const url = import.meta.env.VITE_SUPABASE_URL
+                const key = import.meta.env.VITE_SUPABASE_ANON_KEY
+                let persisted = manager
+                if (url && key && selectedHostel?.manager?.id) {
+                    try {
+                        const saved = await updateManagerApi(selectedHostel.manager.id, manager)
+                        persisted = saved || manager
+                    } catch (err) {
+                        console.error('Update manager failed', err)
+                    }
+                }
+                const updatedHostel = { ...selectedHostel, manager: { ...selectedHostel.manager, ...persisted } }
                 setSelectedHostel(updatedHostel)
                 setHostelList(prev => prev.map(h => h.id === updatedHostel.id ? updatedHostel : h))
                 break
