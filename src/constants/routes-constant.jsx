@@ -3,14 +3,9 @@ import { lazy } from 'react';
 // Các component lazy loading
 const BoardingHouseShowcase = lazy(() => import('../pages/boardingHouse/BoardingHouseShowcase'));
 const Login = lazy(() => import('../pages/login/Login'));
-const Register = lazy(() => import('../pages/Register'));
-const ForgotPassword = lazy(() => import('../pages/ForgotPassword'));
-const Home = lazy(() => import('../pages/Home'));
-const Rooms = lazy(() => import('../pages/Rooms'));
-const Tenants = lazy(() => import('../pages/Tenants'));
-const Bills = lazy(() => import('../pages/Bills'));
-const Maintenance = lazy(() => import('../pages/Maintenance'));
-const Settings = lazy(() => import('../pages/Settings'));
+const AdminIndex = lazy(() => import('../pages/admin/AdminIndex'));
+
+
 
 // Component placeholder cho các trang Coming Soon
 const ComingSoon = ({ title }) => (
@@ -92,196 +87,17 @@ export const ROUTES_CONFIG = [
     layout: 'auth'
   },
   {
-    id: 'register',
-    path: '/auth/register',
-    component: Register,
-    title: 'Đăng ký',
-    isAuth: false,
-    isPublic: true,
-    layout: 'auth'
-  },
-  {
-    id: 'forgot-password',
-    path: '/auth/forgot-password',
-    component: ForgotPassword,
-    title: 'Quên mật khẩu',
-    isAuth: false,
-    isPublic: true,
-    layout: 'auth'
-  },
-
-  // Routes được bảo vệ
-  {
-    id: 'home',
-    path: '/home',
-    component: Home,
-    title: 'Trang chủ',
-    isAuth: true,
-    isPublic: false,
-    layout: 'dashboard',
-    breadcrumb: 'Trang chủ'
-  },
-  {
-    id: 'dashboard',
-    path: '/dashboard',
-    component: Home,
-    title: 'Dashboard',
-    isAuth: true,
-    isPublic: false,
-    layout: 'dashboard',
-    breadcrumb: 'Dashboard'
-  },
-  {
-    id: 'rooms',
-    path: '/rooms',
-    component: Rooms,
-    title: 'Quản lý phòng',
-    isAuth: true,
-    isPublic: false,
-    layout: 'dashboard',
-    breadcrumb: 'Quản lý phòng'
-  },
-  {
-    id: 'tenants',
-    path: '/tenants',
-    component: Tenants,
-    title: 'Quản lý người thuê',
-    isAuth: true,
-    isPublic: false,
-    layout: 'dashboard',
-    breadcrumb: 'Quản lý người thuê'
-  },
-  {
-    id: 'bills',
-    path: '/bills',
-    component: Bills,
-    title: 'Quản lý hóa đơn',
-    isAuth: true,
-    isPublic: false,
-    layout: 'dashboard',
-    breadcrumb: 'Quản lý hóa đơn'
-  },
-  {
-    id: 'maintenance',
-    path: '/maintenance',
-    component: Maintenance,
-    title: 'Bảo trì',
-    isAuth: true,
-    isPublic: false,
-    layout: 'dashboard',
-    breadcrumb: 'Bảo trì'
-  },
-  {
-    id: 'settings',
-    path: '/settings',
-    component: Settings,
-    title: 'Cài đặt',
-    isAuth: true,
-    isPublic: false,
-    layout: 'dashboard',
-    breadcrumb: 'Cài đặt'
-  },
-
-  // Routes chủ trọ (Sắp ra mắt)
-  {
-    id: 'landlord',
-    path: '/landlord',
-    component: () => <ComingSoon title="Dashboard Chủ Trọ" />,
-    title: 'Dashboard Chủ Trọ',
-    isAuth: true,
-    isPublic: false,
-    layout: 'dashboard',
-    comingSoon: true
-  },
-  {
-    id: 'landlord-dashboard',
-    path: '/landlord/dashboard',
-    component: () => <ComingSoon title="Dashboard Chủ Trọ" />,
-    title: 'Dashboard Chủ Trọ',
-    isAuth: true,
-    isPublic: false,
-    layout: 'dashboard',
-    comingSoon: true
-  },
-
-  // Routes quản trị (Sắp ra mắt)
-  {
     id: 'admin',
-    path: '/admin',
-    component: () => <ComingSoon title="Quản Trị Viên" />,
-    title: 'Quản Trị Viên',
-    isAuth: true,
-    isPublic: false,
-    layout: 'admin',
-    role: 'admin',
-    comingSoon: true
-  },
-  {
-    id: 'admin-dashboard',
-    path: '/admin/dashboard',
-    component: () => <ComingSoon title="Dashboard Admin" />,
-    title: 'Dashboard Admin',
-    isAuth: true,
-    isPublic: false,
-    layout: 'admin',
-    role: 'admin',
-    comingSoon: true
-  },
-  {
-    id: 'admin-users',
-    path: '/admin/users',
-    component: () => <ComingSoon title="Quản Lý Người Dùng" />,
-    title: 'Quản Lý Người Dùng',
-    isAuth: true,
-    isPublic: false,
-    layout: 'admin',
-    role: 'admin',
-    comingSoon: true
-  },
-  {
-    id: 'admin-rooms',
-    path: '/admin/rooms',
-    component: () => <ComingSoon title="Quản Lý Phòng (Admin)" />,
-    title: 'Quản Lý Phòng (Admin)',
-    isAuth: true,
-    isPublic: false,
-    layout: 'admin',
-    role: 'admin',
-    comingSoon: true
-  },
-  {
-    id: 'admin-tenants',
-    path: '/admin/tenants',
-    component: () => <ComingSoon title="Quản Lý Người Thuê (Admin)" />,
-    title: 'Quản Lý Người Thuê (Admin)',
-    isAuth: true,
-    isPublic: false,
-    layout: 'admin',
-    role: 'admin',
-    comingSoon: true
-  },
-  {
-    id: 'admin-settings',
-    path: '/admin/settings',
-    component: () => <ComingSoon title="Cài Đặt Hệ Thống" />,
-    title: 'Cài Đặt Hệ Thống',
-    isAuth: true,
-    isPublic: false,
-    layout: 'admin',
-    role: 'admin',
-    comingSoon: true
-  },
-
-  // Route 404
-  {
-    id: 'not-found',
-    path: '*',
-    component: NotFound,
-    title: '404 - Không tìm thấy trang',
+    path: '/admin/*',
+    component: AdminIndex,
+    title: 'Admin',
     isAuth: false,
     isPublic: true,
-    layout: 'public'
-  }
+    layout: 'admin'
+  },
+
+
+
 ];
 
 // Hàm tiện ích
@@ -318,27 +134,3 @@ export const PUBLIC_ROUTES = {
   FORGOT_PASSWORD: '/auth/forgot-password'
 };
 
-export const PROTECTED_ROUTES = {
-  HOME: '/home',
-  DASHBOARD: '/dashboard',
-  ROOMS: '/rooms',
-  TENANTS: '/tenants',
-  BILLS: '/bills',
-  MAINTENANCE: '/maintenance',
-  PROFILE: '/profile',
-  SETTINGS: '/settings'
-};
-
-export const LANDLORD_ROUTES = {
-  MAIN: '/landlord',
-  DASHBOARD: '/landlord/dashboard'
-};
-
-export const ADMIN_ROUTES = {
-  MAIN: '/admin',
-  DASHBOARD: '/admin/dashboard',
-  USERS: '/admin/users',
-  ROOMS: '/admin/rooms',
-  TENANTS: '/admin/tenants',
-  SETTINGS: '/admin/settings'
-};

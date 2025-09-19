@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logoHome from '../../assets/logoHome.png';
 
+
 const Login = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
@@ -21,8 +22,8 @@ const Login = () => {
         e.preventDefault();
         // Mô phỏng đăng nhập
         console.log('Login:', formData);
-        // Chuyển hướng đến dashboard sau khi đăng nhập thành công
-        navigate('/home');
+        // Chuyển hướng đến admin sau khi đăng nhập thành công
+        navigate('/admin/dashboard');
     };
 
     return (
