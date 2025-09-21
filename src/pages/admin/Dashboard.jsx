@@ -279,15 +279,17 @@ export default function Dashboard() {
                         filteredTenants={filteredTenants}
                         isAddTenantOpen={isAddTenantOpen}
                         onAddTenantOpenChange={setIsAddTenantOpen}
+                        selectedHostel={selectedHostel}
                         onAddTenant={async (payload) => {
                             try {
                                 const newTenant = {
                                     name: payload.name,
                                     room_number: payload.roomNumber,
-                                    address: payload.address,
                                     phone: payload.phone,
                                     emergency_phone: payload.emergencyPhone,
                                     months_rented: Number(payload.rentMonths || 0),
+                                    rent_amount: payload.rentAmount,
+                                    room_id: payload.roomId,
                                     status: "active",
                                     hostel_id: selectedHostel.id,
                                 }
@@ -317,7 +319,7 @@ export default function Dashboard() {
                                     id: nextId,
                                     name: payload.name,
                                     roomNumber: payload.roomNumber,
-                                    address: payload.address,
+                                    address: payload.address, // Chỉ lưu local cho fallback
                                     phone: payload.phone,
                                     emergencyPhone: payload.emergencyPhone,
                                     rentMonths: Number(payload.rentMonths || 0),
@@ -328,9 +330,7 @@ export default function Dashboard() {
                             }
                         }}
                         onEditTenant={editTenant}
-                        onExportTenant={exportTenant}
                         onDeleteTenant={handleDeleteTenant}
-                        onGenerateContract={generateContract}
                     />
                 )
             case "contact":

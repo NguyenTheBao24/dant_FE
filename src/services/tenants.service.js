@@ -1,4 +1,5 @@
 import { supabase } from './supabase-client'
+import { updateRoomStatus } from './rooms.service'
 
 const isSupabaseConfigured = () => {
     const url = import.meta.env.VITE_SUPABASE_URL
@@ -54,13 +55,47 @@ export const createTenant = async (tenant) => {
     }
 
     try {
+        // Chỉ gửi các trường có trong schema của bảng tenants
+        const validFields = {
+            name: tenant.name,
+            phone: tenant.phone,
+            email: tenant.email,
+            room_number: tenant.room_number,
+            room_id: tenant.room_id,
+            hostel_id: tenant.hostel_id,
+            move_in_date: tenant.move_in_date,
+            rent_amount: tenant.rent_amount,
+            emergency_phone: tenant.emergency_phone,
+            months_rented: tenant.months_rented,
+            status: tenant.status || 'active'
+        }
+
+        // Loại bỏ các trường undefined/null
+        const cleanFields = Object.fromEntries(
+            Object.entries(validFields).filter(([_, value]) => value !== undefined && value !== null)
+        )
+
+        console.log('Creating tenant with fields:', cleanFields)
+
         const { data, error } = await supabase
             .from('tenants')
-            .insert(tenant)
+            .insert(cleanFields)
             .select()
             .single()
 
         if (error) throw error
+
+        // Cập nhật trạng thái phòng thành 'occupied' nếu có room_id
+        if (data.room_id) {
+            try {
+                await updateRoomStatus(data.room_id, 'occupied')
+                console.log('Updated room status to occupied for room:', data.room_id)
+            } catch (roomError) {
+                console.error('Failed to update room status:', roomError)
+                // Không throw error để không ảnh hưởng đến việc tạo tenant
+            }
+        }
+
         return data
     } catch (error) {
         console.error('Error creating tenant:', error)
@@ -75,9 +110,31 @@ export const updateTenant = async (id, updates) => {
     }
 
     try {
+        // Chỉ gửi các trường có trong schema của bảng tenants
+        const validFields = {
+            name: updates.name,
+            phone: updates.phone,
+            email: updates.email,
+            room_number: updates.room_number,
+            room_id: updates.room_id,
+            hostel_id: updates.hostel_id,
+            move_in_date: updates.move_in_date,
+            rent_amount: updates.rent_amount,
+            emergency_phone: updates.emergency_phone,
+            months_rented: updates.months_rented,
+            status: updates.status
+        }
+
+        // Loại bỏ các trường undefined/null
+        const cleanFields = Object.fromEntries(
+            Object.entries(validFields).filter(([_, value]) => value !== undefined && value !== null)
+        )
+
+        console.log('Updating tenant with fields:', cleanFields)
+
         const { data, error } = await supabase
             .from('tenants')
-            .update(updates)
+            .update(cleanFields)
             .eq('id', id)
             .select()
             .single()
@@ -97,12 +154,34 @@ export const deleteTenant = async (id) => {
     }
 
     try {
+        // Lấy thông tin tenant trước khi xóa để cập nhật trạng thái phòng
+        const { data: tenant, error: fetchError } = await supabase
+            .from('tenants')
+            .select('room_id')
+            .eq('id', id)
+            .single()
+
+        if (fetchError) throw fetchError
+
+        // Xóa tenant
         const { error } = await supabase
             .from('tenants')
             .delete()
             .eq('id', id)
 
         if (error) throw error
+
+        // Cập nhật trạng thái phòng thành 'available' nếu có room_id
+        if (tenant.room_id) {
+            try {
+                await updateRoomStatus(tenant.room_id, 'available')
+                console.log('Updated room status to available for room:', tenant.room_id)
+            } catch (roomError) {
+                console.error('Failed to update room status:', roomError)
+                // Không throw error để không ảnh hưởng đến việc xóa tenant
+            }
+        }
+
         return { id: id }
     } catch (error) {
         console.error('Error deleting tenant:', error)

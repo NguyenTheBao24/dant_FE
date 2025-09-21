@@ -1,6 +1,6 @@
 "use client"
 
-import { Plus, MoreHorizontal, Edit, Trash2, FileText, Download } from "lucide-react"
+import { Plus, MoreHorizontal, Edit, Trash2 } from "lucide-react"
 import { Button } from "@/components/admin/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/admin/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/admin/ui/table"
@@ -17,8 +17,8 @@ import {
 import { Input } from "@/components/admin/ui/input"
 import { Label } from "@/components/admin/ui/label"
 import { Textarea } from "@/components/admin/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/admin/ui/select"
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
+import { getAvailableRoomsByHostel } from "@/services/rooms.service"
 
 interface CustomersTabProps {
     filteredTenants: any[]
@@ -26,9 +26,8 @@ interface CustomersTabProps {
     onAddTenantOpenChange: (open: boolean) => void
     onAddTenant?: (payload: any) => void
     onEditTenant?: (tenant: any) => void
-    onExportTenant?: (tenant: any) => void
     onDeleteTenant?: (tenant: any) => void
-    onGenerateContract: (tenant: any) => void
+    selectedHostel?: any
 }
 
 export function CustomersTab({
@@ -37,12 +36,17 @@ export function CustomersTab({
     onAddTenantOpenChange,
     onAddTenant,
     onEditTenant,
-    onExportTenant,
     onDeleteTenant,
-    onGenerateContract,
+    selectedHostel,
 }: CustomersTabProps) {
     const [isEditOpen, setIsEditOpen] = useState(false)
     const [editingTenant, setEditingTenant] = useState<any | null>(null)
+    const [availableRooms, setAvailableRooms] = useState<any[]>([])
+    const [isLoadingRooms, setIsLoadingRooms] = useState(false)
+    const [roomSearchTerm, setRoomSearchTerm] = useState("")
+    const [showRoomSuggestions, setShowRoomSuggestions] = useState(false)
+    const [selectedRoom, setSelectedRoom] = useState<any | null>(null)
+    const roomInputRef = useRef<HTMLInputElement>(null)
     const [editForm, setEditForm] = useState({
         name: "",
         roomNumber: "",
@@ -52,42 +56,131 @@ export function CustomersTab({
         rentMonths: "",
     })
 
+    // Load danh sách phòng còn trống khi selectedHostel thay đổi
+    useEffect(() => {
+        const loadAvailableRooms = async () => {
+            if (!selectedHostel?.id) {
+                setAvailableRooms([])
+                return
+            }
+
+            setIsLoadingRooms(true)
+            try {
+                const rooms = await getAvailableRoomsByHostel(selectedHostel.id)
+                console.log('Loaded available rooms:', rooms)
+                setAvailableRooms(rooms || [])
+            } catch (error) {
+                console.error('Failed to load available rooms:', error)
+                // Không set empty array, để service tự xử lý fallback
+                setAvailableRooms([])
+            } finally {
+                setIsLoadingRooms(false)
+            }
+        }
+
+        loadAvailableRooms()
+    }, [selectedHostel])
+
+    // Lọc phòng theo từ khóa tìm kiếm
+    const filteredRooms = availableRooms.filter(room =>
+        room.room_number.toLowerCase().includes(roomSearchTerm.toLowerCase()) ||
+        room.room_type.toLowerCase().includes(roomSearchTerm.toLowerCase())
+    )
+
+    // Xử lý chọn phòng
+    const handleRoomSelect = (room: any) => {
+        setSelectedRoom(room)
+        setRoomSearchTerm(room.room_number)
+        setShowRoomSuggestions(false)
+    }
+
+    // Xử lý thay đổi input
+    const handleRoomInputChange = (value: string) => {
+        setRoomSearchTerm(value)
+        setShowRoomSuggestions(true)
+        setSelectedRoom(null)
+    }
+
+    // Xử lý click outside để đóng suggestions
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (roomInputRef.current && !roomInputRef.current.contains(event.target as Node)) {
+                setShowRoomSuggestions(false)
+            }
+        }
+
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [])
+
     const openEdit = (tenant: any) => {
         setEditingTenant(tenant)
         setEditForm({
             name: tenant.name || "",
-            roomNumber: tenant.roomNumber || "",
+            roomNumber: tenant.room_number || tenant.roomNumber || "", // Ưu tiên backend field
             address: tenant.address || "",
             phone: tenant.phone || "",
-            emergencyPhone: tenant.emergencyPhone || "",
-            rentMonths: String(tenant.rentMonths ?? ""),
+            emergencyPhone: tenant.emergency_phone || tenant.emergencyPhone || "", // Ưu tiên backend field
+            rentMonths: String(tenant.months_rented ?? tenant.rentMonths ?? ""), // Ưu tiên backend field
         })
         setIsEditOpen(true)
     }
 
     const saveEdit = () => {
         if (!editingTenant || !onEditTenant) return
-        onEditTenant({
+
+        // Mapping dữ liệu để phù hợp với backend (Supabase)
+        // Chỉ gửi các trường có trong schema của bảng tenants
+        const updatedTenant = {
             ...editingTenant,
             name: editForm.name,
-            roomNumber: editForm.roomNumber,
-            address: editForm.address,
+            room_number: editForm.roomNumber, // Backend sử dụng room_number
             phone: editForm.phone,
+            emergency_phone: editForm.emergencyPhone, // Backend sử dụng emergency_phone
+            months_rented: Number(editForm.rentMonths || 0), // Backend sử dụng months_rented
+            // Giữ lại các field frontend để hiển thị
+            roomNumber: editForm.roomNumber,
+            address: editForm.address, // Chỉ lưu local, không gửi lên Supabase
             emergencyPhone: editForm.emergencyPhone,
             rentMonths: Number(editForm.rentMonths || 0),
-        })
+        }
+
+        onEditTenant(updatedTenant)
         setIsEditOpen(false)
         setEditingTenant(null)
     }
     const handleSave = () => {
         if (!onAddTenant) return
         const name = (document.getElementById('tenant-name') as HTMLInputElement)?.value || ''
-        const roomNumber = (document.querySelector('[data-room-select]') as HTMLInputElement)?.dataset.value || ''
         const address = (document.getElementById('address') as HTMLTextAreaElement)?.value || ''
         const phone = (document.getElementById('phone') as HTMLInputElement)?.value || ''
         const emergencyPhone = (document.getElementById('emergency-phone') as HTMLInputElement)?.value || ''
         const rentMonths = (document.getElementById('rent-months') as HTMLInputElement)?.value || '0'
-        onAddTenant({ name, roomNumber, address, phone, emergencyPhone, rentMonths })
+
+        // Kiểm tra xem đã chọn phòng chưa
+        if (!selectedRoom) {
+            alert('Vui lòng chọn phòng từ danh sách gợi ý')
+            return
+        }
+
+        onAddTenant({
+            name,
+            roomNumber: selectedRoom.room_number,
+            address,
+            phone,
+            emergencyPhone,
+            rentMonths,
+            roomId: selectedRoom.id,
+            roomType: selectedRoom.room_type,
+            rentAmount: selectedRoom.rent_amount
+        })
+
+        // Reset form
+        setRoomSearchTerm("")
+        setSelectedRoom(null)
+        setShowRoomSuggestions(false)
         onAddTenantOpenChange(false)
     }
     return (
@@ -97,7 +190,15 @@ export function CustomersTab({
                     <h2 className="text-3xl font-bold text-gray-900 mb-2">Quản lý khách thuê</h2>
                     <p className="text-gray-600">Quản lý thông tin và hợp đồng thuê của khách hàng</p>
                 </div>
-                <Dialog open={isAddTenantOpen} onOpenChange={onAddTenantOpenChange}>
+                <Dialog open={isAddTenantOpen} onOpenChange={(open) => {
+                    onAddTenantOpenChange(open)
+                    if (!open) {
+                        // Reset form khi đóng dialog
+                        setRoomSearchTerm("")
+                        setSelectedRoom(null)
+                        setShowRoomSuggestions(false)
+                    }
+                }}>
                     <DialogTrigger asChild>
                         <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-200">
                             <Plus className="mr-2 h-4 w-4" />
@@ -115,22 +216,54 @@ export function CustomersTab({
                                     <Label htmlFor="tenant-name">Tên khách thuê</Label>
                                     <Input id="tenant-name" placeholder="Nguyễn Văn A" />
                                 </div>
-                                <div className="space-y-2">
+                                <div className="space-y-2 relative">
                                     <Label htmlFor="room-number">Số phòng</Label>
-                                    <Select onValueChange={(v) => {
-                                        const trigger = document.querySelector('[data-room-select]') as HTMLElement
-                                        if (trigger) trigger.dataset.value = v
-                                    }}>
-                                        <SelectTrigger data-room-select>
-                                            <SelectValue placeholder="Chọn phòng" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="A101">A101</SelectItem>
-                                            <SelectItem value="A102">A102</SelectItem>
-                                            <SelectItem value="B201">B201</SelectItem>
-                                            <SelectItem value="B202">B202</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                    <div className="relative" ref={roomInputRef}>
+                                        <Input
+                                            id="room-number"
+                                            placeholder={isLoadingRooms ? "Đang tải..." : "Gõ tên phòng để tìm kiếm..."}
+                                            value={roomSearchTerm}
+                                            onChange={(e) => handleRoomInputChange(e.target.value)}
+                                            onFocus={() => setShowRoomSuggestions(true)}
+                                            className="w-full"
+                                        />
+
+                                        {/* Suggestions dropdown */}
+                                        {showRoomSuggestions && roomSearchTerm && (
+                                            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                                {isLoadingRooms ? (
+                                                    <div className="px-3 py-2 text-sm text-gray-500">Đang tải danh sách phòng...</div>
+                                                ) : filteredRooms.length === 0 ? (
+                                                    <div className="px-3 py-2 text-sm text-gray-500">Không tìm thấy phòng phù hợp</div>
+                                                ) : (
+                                                    filteredRooms.map((room) => (
+                                                        <div
+                                                            key={room.id}
+                                                            className="px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 border-b border-gray-100 last:border-b-0"
+                                                            onClick={() => handleRoomSelect(room)}
+                                                        >
+                                                            <div className="font-medium text-gray-900">{room.room_number}</div>
+                                                            <div className="text-gray-600">
+                                                                {room.room_type} - {room.rent_amount?.toLocaleString('vi-VN')}đ/tháng
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Hiển thị phòng đã chọn */}
+                                        {selectedRoom && (
+                                            <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                                                <div className="text-sm font-medium text-green-800">
+                                                    Đã chọn: {selectedRoom.room_number}
+                                                </div>
+                                                <div className="text-xs text-green-600">
+                                                    {selectedRoom.room_type} - {selectedRoom.rent_amount?.toLocaleString('vi-VN')}đ/tháng
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                             <div className="space-y-2">
@@ -220,10 +353,10 @@ export function CustomersTab({
                                         </TableCell>
                                         <TableCell className="py-4">
                                             <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-medium">
-                                                {tenant.roomNumber}
+                                                {tenant.room_number || tenant.roomNumber}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="max-w-xs truncate text-gray-600 py-4">{tenant.address}</TableCell>
+                                        <TableCell className="max-w-xs truncate text-gray-600 py-4">{tenant.address || 'Chưa cập nhật'}</TableCell>
                                         <TableCell className="py-4">
                                             <div className="flex items-center text-gray-700">
 
@@ -232,13 +365,12 @@ export function CustomersTab({
                                         </TableCell>
                                         <TableCell className="py-4">
                                             <div className="flex items-center text-gray-700">
-
-                                                {tenant.emergencyPhone}
+                                                {tenant.emergency_phone || tenant.emergencyPhone}
                                             </div>
                                         </TableCell>
                                         <TableCell className="py-4">
                                             <div className="flex items-center">
-                                                <span className="text-gray-700 font-medium">{tenant.rentMonths}</span>
+                                                <span className="text-gray-700 font-medium">{tenant.months_rented || tenant.rentMonths}</span>
                                                 <span className="text-gray-500 ml-1">tháng</span>
                                             </div>
                                         </TableCell>
