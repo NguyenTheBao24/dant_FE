@@ -1,8 +1,7 @@
 "use client"
 
 import { Card, CardContent } from "@/components/admin/ui/card"
-import { Button } from "@/components/admin/ui/button"
-import { Badge } from "@/components/admin/ui/badge"
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/admin/ui/avatar"
 import { Phone, Mail } from "lucide-react"
 
@@ -24,7 +23,7 @@ interface ManagerProfileProps {
     onAction: (action: string, manager: any) => void
 }
 
-export function ManagerProfile({ manager, hostel, onAction }: ManagerProfileProps) {
+export function ManagerProfile({ manager, hostel }: ManagerProfileProps) {
     return (
         <Card className="overflow-hidden border-0 shadow-xl bg-white/80 backdrop-blur-sm">
             <CardContent className="p-0">

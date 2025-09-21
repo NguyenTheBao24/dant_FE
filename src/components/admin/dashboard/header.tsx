@@ -11,7 +11,7 @@ interface HeaderProps {
     onSearchChange: (term: string) => void
 }
 
-export function DashboardHeader({ selectedHostel, hostels, searchTerm, onHostelChange, onSearchChange }: HeaderProps) {
+export function DashboardHeader({ selectedHostel, hostels,  onHostelChange,  }: HeaderProps) {
     return (
         <header className="border-b border-gray-200 bg-white shadow-sm">
             <div className="flex h-16 items-center px-6">

@@ -17,7 +17,7 @@ import { Badge } from "@/components/admin/ui/badge"
 import { Key } from "lucide-react"
 
 import { revenueData, tenantData, notifications, expenseCategories, hostels } from "@/data/dashboard-data"
-import { getHostels, updateManager, createHostel, deleteHostel } from "@/services/hostels.service"
+import { getHostels, updateManager, createHostel, deleteHostel, updateHostelOccupancy, calculateAndUpdateHostelOccupancy } from "@/services/hostels.service"
 import { getTenants, getTenantsByHostel, createTenant, updateTenant, deleteTenant } from "@/services/tenants.service"
 import { getEmployees, getNotifications, getRevenueData, getExpenseCategories } from "@/services/dashboard.service"
 
@@ -94,10 +94,38 @@ export default function Dashboard() {
         try {
             await deleteTenant(tenant.id)
             setTenants(prev => prev.filter(t => t.id !== tenant.id))
+
+            // Tính toán và cập nhật occupancy tự động
+            const updatedHostel = await calculateAndUpdateHostelOccupancy(selectedHostel.id)
+
+            // Cập nhật selectedHostel với occupancy mới
+            setSelectedHostel(prev => ({
+                ...prev,
+                occupancy: updatedHostel.occupancy
+            }))
+
+            // Cập nhật hostelList với occupancy mới
+            setHostelList(prev => prev.map(hostel =>
+                hostel.id === selectedHostel.id
+                    ? { ...hostel, occupancy: updatedHostel.occupancy }
+                    : hostel
+            ))
         } catch (error) {
             console.error('Failed to delete tenant:', error)
             // Fallback to local state
             setTenants(prev => prev.filter(t => t.id !== tenant.id))
+
+            // Tính toán occupancy ngay cả khi có lỗi
+            const updatedHostel = await calculateAndUpdateHostelOccupancy(selectedHostel.id)
+            setSelectedHostel(prev => ({
+                ...prev,
+                occupancy: updatedHostel.occupancy
+            }))
+            setHostelList(prev => prev.map(hostel =>
+                hostel.id === selectedHostel.id
+                    ? { ...hostel, occupancy: updatedHostel.occupancy }
+                    : hostel
+            ))
         }
     }
 
@@ -109,8 +137,15 @@ export default function Dashboard() {
                 // Load hostels
                 const hostelsData = await getHostels()
                 if (hostelsData && hostelsData.length > 0) {
-                    setHostelList(hostelsData)
-                    setSelectedHostel(hostelsData[0])
+                    // Tính toán occupancy cho từng khu trọ
+                    const hostelsWithUpdatedOccupancy = await Promise.all(
+                        hostelsData.map(async (hostel) => {
+                            const updatedHostel = await calculateAndUpdateHostelOccupancy(hostel.id)
+                            return { ...hostel, occupancy: updatedHostel.occupancy }
+                        })
+                    )
+                    setHostelList(hostelsWithUpdatedOccupancy)
+                    setSelectedHostel(hostelsWithUpdatedOccupancy[0])
                 }
 
                 // Load tenants
@@ -258,6 +293,22 @@ export default function Dashboard() {
                                 }
                                 const created = await createTenant(newTenant)
                                 setTenants(prev => [...prev, created])
+
+                                // Tính toán và cập nhật occupancy tự động
+                                const updatedHostel = await calculateAndUpdateHostelOccupancy(selectedHostel.id)
+
+                                // Cập nhật selectedHostel với occupancy mới
+                                setSelectedHostel(prev => ({
+                                    ...prev,
+                                    occupancy: updatedHostel.occupancy
+                                }))
+
+                                // Cập nhật hostelList với occupancy mới
+                                setHostelList(prev => prev.map(hostel =>
+                                    hostel.id === selectedHostel.id
+                                        ? { ...hostel, occupancy: updatedHostel.occupancy }
+                                        : hostel
+                                ))
                             } catch (error) {
                                 console.error('Failed to create tenant:', error)
                                 // Fallback to local state

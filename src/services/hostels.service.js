@@ -152,3 +152,33 @@ export async function updateHostelOccupancy(hostelId, occupancy) {
         return { id: hostelId, occupancy }
     }
 }
+
+export async function calculateAndUpdateHostelOccupancy(hostelId) {
+    if (!isSupabaseConfigured()) {
+        console.log('Supabase not configured, returning mock calculation')
+        return { id: hostelId, occupancy: 0 }
+    }
+
+    try {
+        // Đếm số tenants active cho hostel này
+        const { count, error } = await supabase
+            .from('tenants')
+            .select('*', { count: 'exact', head: true })
+            .eq('hostel_id', hostelId)
+            .eq('status', 'active')
+
+        if (error) {
+            console.error('Error counting tenants:', error)
+            throw error
+        }
+
+        const occupancy = count || 0
+        console.log(`Calculated occupancy for hostel ${hostelId}: ${occupancy}`)
+
+        // Cập nhật occupancy trong database
+        return await updateHostelOccupancy(hostelId, occupancy)
+    } catch (error) {
+        console.error('Error calculating hostel occupancy:', error)
+        return { id: hostelId, occupancy: 0 }
+    }
+}
