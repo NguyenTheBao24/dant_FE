@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { CustomersTab } from "@/components/admin/dashboard/customers-tab"
@@ -17,6 +17,9 @@ import { Badge } from "@/components/admin/ui/badge"
 import { Key } from "lucide-react"
 
 import { revenueData, tenantData, notifications, expenseCategories, hostels } from "@/data/dashboard-data"
+import { getHostels, updateManager } from "@/services/hostels.service"
+import { getTenants, getTenantsByHostel, createTenant, updateTenant, deleteTenant } from "@/services/tenants.service"
+import { getEmployees, getNotifications, getRevenueData, getExpenseCategories } from "@/services/dashboard.service"
 
 export default function Dashboard() {
     const [activeTab, setActiveTab] = useState("overview")
@@ -28,13 +31,19 @@ export default function Dashboard() {
     const [isAddTenantOpen, setIsAddTenantOpen] = useState(false)
     const [isManagerDialogOpen, setIsManagerDialogOpen] = useState(false)
     const [tenants, setTenants] = useState(tenantData)
+    const [isLoading, setIsLoading] = useState(false)
+    const [chartData, setChartData] = useState({
+        revenue: revenueData,
+        expenseCategories: expenseCategories,
+        notifications: notifications,
+    })
 
     const filteredTenants = tenants
-        .filter((tenant) => tenant.hostelId === selectedHostel.id)
+        .filter((tenant) => (tenant.hostel_id || tenant.hostelId) === selectedHostel.id)
         .filter(
             (tenant) =>
                 tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                tenant.roomNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (tenant.room_number || tenant.roomNumber)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 tenant.phone.includes(searchTerm),
         )
 
@@ -43,13 +52,30 @@ export default function Dashboard() {
         alert(`Đang tạo hợp đồng thuê cho ${tenant.name}...`)
     }
 
-    const editTenant = (updatedTenant) => {
-        setTenants(prev => prev.map(t => t.id === updatedTenant.id ? { ...t, ...updatedTenant } : t))
+    const editTenant = async (updatedTenant) => {
+        try {
+            await updateTenant(updatedTenant.id, updatedTenant)
+            setTenants(prev => prev.map(t => t.id === updatedTenant.id ? { ...t, ...updatedTenant } : t))
+        } catch (error) {
+            console.error('Failed to update tenant:', error)
+            // Fallback to local state
+            setTenants(prev => prev.map(t => t.id === updatedTenant.id ? { ...t, ...updatedTenant } : t))
+        }
     }
 
     const exportTenant = (tenant) => {
         const csvHeader = ['id', 'name', 'roomNumber', 'address', 'phone', 'emergencyPhone', 'rentMonths', 'status', 'hostelId']
-        const row = [tenant.id, tenant.name, tenant.roomNumber, tenant.address, tenant.phone, tenant.emergencyPhone, tenant.rentMonths, tenant.status, tenant.hostelId]
+        const row = [
+            tenant.id,
+            tenant.name,
+            tenant.room_number || tenant.roomNumber,
+            tenant.address,
+            tenant.phone,
+            tenant.emergency_phone || tenant.emergencyPhone,
+            tenant.months_rented || tenant.rentMonths,
+            tenant.status,
+            tenant.hostel_id || tenant.hostelId
+        ]
         const csv = `${csvHeader.join(',')}\n${row.map(v => `"${String(v).replaceAll('"', '""')}"`).join(',')}`
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
         const url = URL.createObjectURL(blob)
@@ -62,12 +88,92 @@ export default function Dashboard() {
         URL.revokeObjectURL(url)
     }
 
-    const deleteTenant = (tenant) => {
+    const handleDeleteTenant = async (tenant) => {
         if (!confirm(`Xóa khách thuê "${tenant.name}"?`)) return
-        setTenants(prev => prev.filter(t => t.id !== tenant.id))
+        try {
+            await deleteTenant(tenant.id)
+            setTenants(prev => prev.filter(t => t.id !== tenant.id))
+        } catch (error) {
+            console.error('Failed to delete tenant:', error)
+            // Fallback to local state
+            setTenants(prev => prev.filter(t => t.id !== tenant.id))
+        }
     }
 
-    const handleManagerAction = (action, manager) => {
+    // Load all data from Supabase on component mount
+    useEffect(() => {
+        const loadAllData = async () => {
+            setIsLoading(true)
+            try {
+                // Load hostels
+                const hostelsData = await getHostels()
+                if (hostelsData && hostelsData.length > 0) {
+                    setHostelList(hostelsData)
+                    setSelectedHostel(hostelsData[0])
+                }
+
+                // Load tenants
+                const tenantsData = await getTenants()
+                if (tenantsData && tenantsData.length > 0) {
+                    setTenants(tenantsData)
+                }
+
+                // Load chart data
+                const [revenueData, expenseData, notificationsData] = await Promise.all([
+                    getRevenueData(),
+                    getExpenseCategories(),
+                    getNotifications()
+                ])
+
+                setChartData({
+                    revenue: revenueData || revenueData,
+                    expenseCategories: expenseData || expenseCategories,
+                    notifications: notificationsData || notifications,
+                })
+            } catch (error) {
+                console.error('Failed to load data from Supabase:', error)
+                // Keep using mock data if Supabase fails
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        loadAllData()
+    }, [])
+
+    // Load tenants when selectedHostel changes
+    useEffect(() => {
+        const loadTenantsForHostel = async () => {
+            if (!selectedHostel?.id) return
+
+            console.log('Loading tenants for hostel:', selectedHostel.id, selectedHostel.name)
+
+            try {
+                const tenantsData = await getTenantsByHostel(selectedHostel.id)
+                console.log('Tenants from getTenantsByHostel:', tenantsData)
+
+                if (tenantsData && tenantsData.length > 0) {
+                    setTenants(tenantsData)
+                } else {
+                    // If no tenants found for this hostel, try to get all tenants and filter
+                    const allTenants = await getTenants()
+                    console.log('All tenants from getTenants:', allTenants)
+
+                    if (allTenants) {
+                        const filtered = allTenants.filter(t => (t.hostel_id || t.hostelId) === selectedHostel.id)
+                        console.log('Filtered tenants:', filtered)
+                        setTenants(filtered)
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load tenants for hostel:', error)
+            }
+        }
+
+        loadTenantsForHostel()
+    }, [selectedHostel])
+
+    const handleManagerAction = async (action, manager) => {
         switch (action) {
             case "contact":
                 window.open(`tel:${manager.phone}`)
@@ -80,8 +186,19 @@ export default function Dashboard() {
                 setIsManagerDialogOpen(true)
                 break
             case "update_manager": {
-                // Persist manager updates into selectedHostel and hostelList
                 if (!selectedHostel) break
+
+                try {
+                    // Try to update in Supabase first
+                    if (selectedHostel.manager?.id) {
+                        await updateManager(selectedHostel.manager.id, manager)
+                    }
+                } catch (error) {
+                    console.error('Failed to update manager in Supabase:', error)
+                    // Continue with local update even if Supabase fails
+                }
+
+                // Update local state
                 const updatedHostel = { ...selectedHostel, manager: { ...selectedHostel.manager, ...manager } }
                 setSelectedHostel(updatedHostel)
                 setHostelList(prev => prev.map(h => h.id === updatedHostel.id ? updatedHostel : h))
@@ -95,11 +212,7 @@ export default function Dashboard() {
         }
     }
 
-    const chartData = {
-        revenue: revenueData,
-        expenseCategories: expenseCategories,
-        notifications: notifications,
-    }
+    // chartData is now managed by state
 
     const renderPage = () => {
         switch (activeTab) {
@@ -111,24 +224,41 @@ export default function Dashboard() {
                         filteredTenants={filteredTenants}
                         isAddTenantOpen={isAddTenantOpen}
                         onAddTenantOpenChange={setIsAddTenantOpen}
-                        onAddTenant={(payload) => {
-                            const nextId = tenants.length ? Math.max(...tenants.map(t => t.id)) + 1 : 1
-                            const newTenant = {
-                                id: nextId,
-                                name: payload.name,
-                                roomNumber: payload.roomNumber,
-                                address: payload.address,
-                                phone: payload.phone,
-                                emergencyPhone: payload.emergencyPhone,
-                                rentMonths: Number(payload.rentMonths || 0),
-                                status: "active",
-                                hostelId: selectedHostel.id,
+                        onAddTenant={async (payload) => {
+                            try {
+                                const newTenant = {
+                                    name: payload.name,
+                                    room_number: payload.roomNumber,
+                                    address: payload.address,
+                                    phone: payload.phone,
+                                    emergency_phone: payload.emergencyPhone,
+                                    months_rented: Number(payload.rentMonths || 0),
+                                    status: "active",
+                                    hostel_id: selectedHostel.id,
+                                }
+                                const created = await createTenant(newTenant)
+                                setTenants(prev => [...prev, created])
+                            } catch (error) {
+                                console.error('Failed to create tenant:', error)
+                                // Fallback to local state
+                                const nextId = tenants.length ? Math.max(...tenants.map(t => t.id)) + 1 : 1
+                                const newTenant = {
+                                    id: nextId,
+                                    name: payload.name,
+                                    roomNumber: payload.roomNumber,
+                                    address: payload.address,
+                                    phone: payload.phone,
+                                    emergencyPhone: payload.emergencyPhone,
+                                    rentMonths: Number(payload.rentMonths || 0),
+                                    status: "active",
+                                    hostelId: selectedHostel.id,
+                                }
+                                setTenants(prev => [...prev, newTenant])
                             }
-                            setTenants(prev => [...prev, newTenant])
                         }}
                         onEditTenant={editTenant}
                         onExportTenant={exportTenant}
-                        onDeleteTenant={deleteTenant}
+                        onDeleteTenant={handleDeleteTenant}
                         onGenerateContract={generateContract}
                     />
                 )
