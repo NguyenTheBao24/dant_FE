@@ -47,6 +47,12 @@ export function CustomersTab({
     const [showRoomSuggestions, setShowRoomSuggestions] = useState(false)
     const [selectedRoom, setSelectedRoom] = useState<any | null>(null)
     const roomInputRef = useRef<HTMLInputElement>(null)
+
+    // State cho form chỉnh sửa
+    const [editRoomSearchTerm, setEditRoomSearchTerm] = useState("")
+    const [showEditRoomSuggestions, setShowEditRoomSuggestions] = useState(false)
+    const [selectedEditRoom, setSelectedEditRoom] = useState<any | null>(null)
+    const editRoomInputRef = useRef<HTMLInputElement>(null)
     const [editForm, setEditForm] = useState({
         name: "",
         roomNumber: "",
@@ -87,6 +93,12 @@ export function CustomersTab({
         room.room_type.toLowerCase().includes(roomSearchTerm.toLowerCase())
     )
 
+    // Lọc phòng cho form chỉnh sửa
+    const filteredEditRooms = availableRooms.filter(room =>
+        room.room_number.toLowerCase().includes(editRoomSearchTerm.toLowerCase()) ||
+        room.room_type.toLowerCase().includes(editRoomSearchTerm.toLowerCase())
+    )
+
     // Xử lý chọn phòng
     const handleRoomSelect = (room: any) => {
         setSelectedRoom(room)
@@ -101,11 +113,28 @@ export function CustomersTab({
         setSelectedRoom(null)
     }
 
+    // Xử lý chọn phòng cho form chỉnh sửa
+    const handleEditRoomSelect = (room: any) => {
+        setSelectedEditRoom(room)
+        setEditRoomSearchTerm(room.room_number)
+        setShowEditRoomSuggestions(false)
+    }
+
+    // Xử lý thay đổi input cho form chỉnh sửa
+    const handleEditRoomInputChange = (value: string) => {
+        setEditRoomSearchTerm(value)
+        setShowEditRoomSuggestions(true)
+        setSelectedEditRoom(null)
+    }
+
     // Xử lý click outside để đóng suggestions
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (roomInputRef.current && !roomInputRef.current.contains(event.target as Node)) {
                 setShowRoomSuggestions(false)
+            }
+            if (editRoomInputRef.current && !editRoomInputRef.current.contains(event.target as Node)) {
+                setShowEditRoomSuggestions(false)
             }
         }
 
@@ -125,11 +154,32 @@ export function CustomersTab({
             emergencyPhone: tenant.emergency_phone || tenant.emergencyPhone || "", // Ưu tiên backend field
             rentMonths: String(tenant.months_rented ?? tenant.rentMonths ?? ""), // Ưu tiên backend field
         })
+
+        // Khởi tạo phòng đã chọn nếu có
+        const currentRoomNumber = tenant.room_number || tenant.roomNumber || ""
+        if (currentRoomNumber) {
+            setEditRoomSearchTerm(currentRoomNumber)
+            // Tìm phòng hiện tại trong danh sách
+            const currentRoom = availableRooms.find(room => room.room_number === currentRoomNumber)
+            if (currentRoom) {
+                setSelectedEditRoom(currentRoom)
+            }
+        } else {
+            setEditRoomSearchTerm("")
+            setSelectedEditRoom(null)
+        }
+
         setIsEditOpen(true)
     }
 
     const saveEdit = () => {
         if (!editingTenant || !onEditTenant) return
+
+        // Kiểm tra xem đã chọn phòng mới chưa
+        if (selectedEditRoom && selectedEditRoom.room_number !== editForm.roomNumber) {
+            // Cập nhật thông tin phòng từ phòng đã chọn
+            editForm.roomNumber = selectedEditRoom.room_number
+        }
 
         // Mapping dữ liệu để phù hợp với backend (Supabase)
         // Chỉ gửi các trường có trong schema của bảng tenants
@@ -137,9 +187,11 @@ export function CustomersTab({
             ...editingTenant,
             name: editForm.name,
             room_number: editForm.roomNumber, // Backend sử dụng room_number
+            room_id: selectedEditRoom?.id, // Cập nhật room_id nếu có
             phone: editForm.phone,
             emergency_phone: editForm.emergencyPhone, // Backend sử dụng emergency_phone
             months_rented: Number(editForm.rentMonths || 0), // Backend sử dụng months_rented
+            rent_amount: selectedEditRoom?.rent_amount, // Cập nhật giá thuê từ phòng mới
             // Giữ lại các field frontend để hiển thị
             roomNumber: editForm.roomNumber,
             address: editForm.address, // Chỉ lưu local, không gửi lên Supabase
@@ -150,6 +202,11 @@ export function CustomersTab({
         onEditTenant(updatedTenant)
         setIsEditOpen(false)
         setEditingTenant(null)
+
+        // Reset form chỉnh sửa
+        setEditRoomSearchTerm("")
+        setSelectedEditRoom(null)
+        setShowEditRoomSuggestions(false)
     }
     const handleSave = () => {
         if (!onAddTenant) return
@@ -244,7 +301,7 @@ export function CustomersTab({
                                                         >
                                                             <div className="font-medium text-gray-900">{room.room_number}</div>
                                                             <div className="text-gray-600">
-                                                                {room.room_type} - {room.rent_amount?.toLocaleString('vi-VN')}đ/tháng
+                                                                {room.room_type}
                                                             </div>
                                                         </div>
                                                     ))
@@ -259,7 +316,7 @@ export function CustomersTab({
                                                     Đã chọn: {selectedRoom.room_number}
                                                 </div>
                                                 <div className="text-xs text-green-600">
-                                                    {selectedRoom.room_type} - {selectedRoom.rent_amount?.toLocaleString('vi-VN')}đ/tháng
+                                                    {selectedRoom.room_type}
                                                 </div>
                                             </div>
                                         )}
@@ -413,7 +470,15 @@ export function CustomersTab({
                 </CardContent>
             </Card>
 
-            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+            <Dialog open={isEditOpen} onOpenChange={(open) => {
+                setIsEditOpen(open)
+                if (!open) {
+                    // Reset form chỉnh sửa khi đóng
+                    setEditRoomSearchTerm("")
+                    setSelectedEditRoom(null)
+                    setShowEditRoomSuggestions(false)
+                }
+            }}>
                 <DialogContent className="sm:max-w-[600px]">
                     <DialogHeader>
                         <DialogTitle>Chỉnh sửa khách thuê</DialogTitle>
@@ -425,9 +490,54 @@ export function CustomersTab({
                                 <Label htmlFor="edit-name">Tên khách thuê</Label>
                                 <Input id="edit-name" value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} />
                             </div>
-                            <div className="space-y-2">
+                            <div className="space-y-2 relative">
                                 <Label htmlFor="edit-room-number">Số phòng</Label>
-                                <Input id="edit-room-number" value={editForm.roomNumber} onChange={e => setEditForm(f => ({ ...f, roomNumber: e.target.value }))} />
+                                <div className="relative" ref={editRoomInputRef}>
+                                    <Input
+                                        id="edit-room-number"
+                                        placeholder="Gõ tên phòng để tìm kiếm..."
+                                        value={editRoomSearchTerm}
+                                        onChange={(e) => handleEditRoomInputChange(e.target.value)}
+                                        onFocus={() => setShowEditRoomSuggestions(true)}
+                                        className="w-full"
+                                    />
+
+                                    {/* Suggestions dropdown cho form chỉnh sửa */}
+                                    {showEditRoomSuggestions && editRoomSearchTerm && (
+                                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                            {isLoadingRooms ? (
+                                                <div className="px-3 py-2 text-sm text-gray-500">Đang tải danh sách phòng...</div>
+                                            ) : filteredEditRooms.length === 0 ? (
+                                                <div className="px-3 py-2 text-sm text-gray-500">Không tìm thấy phòng phù hợp</div>
+                                            ) : (
+                                                filteredEditRooms.map((room) => (
+                                                    <div
+                                                        key={room.id}
+                                                        className="px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 border-b border-gray-100 last:border-b-0"
+                                                        onClick={() => handleEditRoomSelect(room)}
+                                                    >
+                                                        <div className="font-medium text-gray-900">{room.room_number}</div>
+                                                        <div className="text-gray-600">
+                                                            {room.room_type}
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Hiển thị phòng đã chọn trong form chỉnh sửa */}
+                                    {selectedEditRoom && (
+                                        <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                                            <div className="text-sm font-medium text-green-800">
+                                                Đã chọn: {selectedEditRoom.room_number}
+                                            </div>
+                                            <div className="text-xs text-green-600">
+                                                {selectedEditRoom.room_type}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                         <div className="space-y-2">
