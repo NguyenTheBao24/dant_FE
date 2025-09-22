@@ -40,6 +40,7 @@ export default function Dashboard() {
 
     const filteredTenants = tenants
         .filter((tenant) => selectedHostel && (tenant.hostel_id || tenant.hostelId) === selectedHostel.id)
+        .filter((tenant) => tenant.status === 'active') // Chỉ hiển thị tenant active
         .filter(
             (tenant) =>
                 tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

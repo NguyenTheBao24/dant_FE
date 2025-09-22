@@ -92,6 +92,10 @@ export async function createHostel(hostelData) {
         }
 
         console.log('Successfully created hostel:', data)
+
+        // Tạo phòng cố định cho khu trọ mới
+        await createFixedRoomsForHostel(data.id, hostelData.rooms || 10)
+
         return data
     } catch (error) {
         console.error('Error creating hostel:', error)
@@ -180,5 +184,59 @@ export async function calculateAndUpdateHostelOccupancy(hostelId) {
     } catch (error) {
         console.error('Error calculating hostel occupancy:', error)
         return { id: hostelId, occupancy: 0 }
+    }
+}
+
+// Tạo phòng cố định cho khu trọ mới
+export async function createFixedRoomsForHostel(hostelId, totalRooms) {
+    if (!isSupabaseConfigured()) {
+        console.log('Supabase not configured, skipping room creation')
+        return []
+    }
+
+    try {
+        console.log(`Creating ${totalRooms} fixed rooms for hostel ${hostelId}`)
+
+        // Tạo danh sách phòng cố định
+        const rooms = []
+        const roomTypes = ['Phòng đơn', 'Phòng đôi', 'Phòng VIP']
+        const rentAmounts = [2500000, 3500000, 4500000]
+
+        for (let i = 1; i <= totalRooms; i++) {
+            const floor = Math.ceil(i / 10) // Tầng 1: 1-10, Tầng 2: 11-20, ...
+            const roomNumber = `A${String(i).padStart(3, '0')}`
+            const roomTypeIndex = (i - 1) % 3 // Luân phiên loại phòng
+            const roomType = roomTypes[roomTypeIndex]
+            const rentAmount = rentAmounts[roomTypeIndex]
+
+            rooms.push({
+                hostel_id: hostelId,
+                room_number: roomNumber,
+                room_type: roomType,
+                rent_amount: rentAmount,
+                status: 'available',
+                area: roomType === 'Phòng VIP' ? 25 : roomType === 'Phòng đôi' ? 20 : 15,
+                floor: floor,
+                description: `${roomType} tại tầng ${floor}`
+            })
+        }
+
+        // Thêm phòng vào database
+        const { data, error } = await supabase
+            .from('rooms')
+            .insert(rooms)
+            .select()
+
+        if (error) {
+            console.error('Error creating fixed rooms:', error)
+            throw error
+        }
+
+        console.log(`Successfully created ${data.length} fixed rooms for hostel ${hostelId}`)
+        return data
+    } catch (error) {
+        console.error('Error creating fixed rooms for hostel:', error)
+        // Không throw error để không ảnh hưởng đến việc tạo khu trọ
+        return []
     }
 }

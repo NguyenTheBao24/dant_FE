@@ -43,22 +43,45 @@ export const getAvailableRoomsByHostel = async (hostelId) => {
     }
 
     try {
-        const { data, error } = await supabase
+        // Lấy tất cả phòng của khu trọ
+        const { data: allRooms, error: roomsError } = await supabase
             .from('rooms')
             .select('*')
             .eq('hostel_id', hostelId)
-            .eq('status', 'available')
             .order('room_number')
 
-        if (error) {
+        if (roomsError) {
             // Nếu bảng rooms chưa tồn tại, trả về danh sách phòng mặc định
-            if (error.code === 'PGRST205' || error.message?.includes('relation "rooms" does not exist')) {
+            if (roomsError.code === 'PGRST205' || roomsError.message?.includes('relation "rooms" does not exist')) {
                 console.log('Rooms table does not exist, returning default rooms')
                 return getDefaultRoomsForHostel(hostelId)
             }
-            throw error
+            throw roomsError
         }
-        return data || []
+
+        // Lấy danh sách phòng đã có người thuê
+        const { data: occupiedRooms, error: tenantsError } = await supabase
+            .from('tenants')
+            .select('room_id')
+            .eq('hostel_id', hostelId)
+            .eq('status', 'active')
+
+        if (tenantsError) {
+            console.error('Error fetching occupied rooms:', tenantsError)
+            // Nếu không lấy được danh sách tenant, trả về tất cả phòng
+            return allRooms || []
+        }
+
+        // Lọc ra các phòng còn trống
+        const occupiedRoomIds = occupiedRooms?.map(t => t.room_id) || []
+        const availableRooms = allRooms?.filter(room =>
+            room.status === 'available' && !occupiedRoomIds.includes(room.id)
+        ) || []
+
+        console.log(`Found ${availableRooms.length} available rooms out of ${allRooms?.length || 0} total rooms`)
+        console.log('Occupied room IDs:', occupiedRoomIds)
+        console.log('Available rooms:', availableRooms.map(r => r.room_number))
+        return availableRooms
     } catch (error) {
         console.error('Error fetching available rooms:', error)
         // Fallback về danh sách phòng mặc định
