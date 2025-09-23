@@ -6,7 +6,6 @@ import { Badge } from "@/components/admin/ui/badge"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell } from "recharts"
 import { DollarSign, Users, TrendingUp, Building2, Calendar, Home } from "lucide-react"
 import { useState, useEffect } from "react"
-import { getMonthlyRevenueByRooms, getTotalMonthlyRevenue, getRevenueByRoomType } from "@/services/revenue.service"
 
 interface RoomRevenue {
     roomNumber: string
@@ -40,28 +39,28 @@ export function OverviewPage({ selectedHostel, chartData }: OverviewPageProps) {
     const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
-        const loadRevenueData = async () => {
-            if (!selectedHostel?.id) return
+        // const loadRevenueData = async () => {
+        //     if (!selectedHostel?.id) return
 
-            setIsLoading(true)
-            try {
-                const [revenues, totalRevenue, byRoomType] = await Promise.all([
-                    getMonthlyRevenueByRooms(selectedHostel.id),
-                    getTotalMonthlyRevenue(selectedHostel.id),
-                    getRevenueByRoomType(selectedHostel.id)
-                ])
+        //     setIsLoading(true)
+        //     try {
+        //         const [revenues, totalRevenue, byRoomType] = await Promise.all([
+        //             getMonthlyRevenueByRooms(selectedHostel.id),
+        //             getTotalMonthlyRevenue(selectedHostel.id),
+        //             getRevenueByRoomType(selectedHostel.id)
+        //         ])
 
-                setRoomRevenues(revenues)
-                setTotalMonthlyRevenue(totalRevenue)
-                setRevenueByRoomType(byRoomType)
-            } catch (error) {
-                console.error('Failed to load revenue data:', error)
-            } finally {
-                setIsLoading(false)
-            }
-        }
+        //         setRoomRevenues(revenues)
+        //         setTotalMonthlyRevenue(totalRevenue)
+        //         setRevenueByRoomType(byRoomType)
+        //     } catch (error) {
+        //         console.error('Failed to load revenue data:', error)
+        //     } finally {
+        //         setIsLoading(false)
+        //     }
+        // }
 
-        loadRevenueData()
+        // loadRevenueData()
     }, [selectedHostel])
 
     return (

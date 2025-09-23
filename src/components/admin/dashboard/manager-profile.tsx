@@ -24,6 +24,18 @@ interface ManagerProfileProps {
 }
 
 export function ManagerProfile({ manager, hostel }: ManagerProfileProps) {
+    const managerName = manager?.name && manager.name.trim() !== '' ? manager.name : 'Chưa cập nhật'
+    const managerPhone = manager?.phone && manager.phone.trim() !== '' ? manager.phone : 'Chưa cập nhật'
+    const managerEmail = manager?.email && manager.email.trim() !== '' ? manager.email : 'Chưa cập nhật'
+    const managerExperience = manager?.experience && manager.experience.trim() !== '' ? manager.experience : 'Chưa cập nhật'
+    const totalRooms = Number(hostel?.rooms || 0)
+    const occupied = Number(hostel?.occupancy || 0)
+    const occupancyPct = totalRooms > 0 ? Math.round((occupied / totalRooms) * 100) : 0
+    const initials = managerName
+        .split(' ')
+        .filter(Boolean)
+        .map((n) => n[0])
+        .join('') || 'QL'
     return (
         <Card className="overflow-hidden border-0 shadow-xl bg-white/80 backdrop-blur-sm">
             <CardContent className="p-0">
@@ -32,29 +44,26 @@ export function ManagerProfile({ manager, hostel }: ManagerProfileProps) {
                         <Avatar className="h-24 w-24 border-4 border-white shadow-lg ring-4 ring-primary/20">
                             <AvatarImage src={manager.avatar || "/placeholder.svg"} />
                             <AvatarFallback className="text-xl font-bold bg-gradient-to-br from-primary to-primary/80 text-white">
-                                {manager.name
-                                    .split(" ")
-                                    .map((n) => n[0])
-                                    .join("")}
+                                {initials}
                             </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{manager.name}</h3>
+                                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{managerName}</h3>
                                     <p className="text-slate-600 dark:text-slate-400 text-lg">Quản lý khu trọ</p>
                                     <div className="flex items-center space-x-6 mt-3">
                                         <div className="flex items-center space-x-2 px-3 py-1 bg-white/60 rounded-full">
                                             <Phone className="h-4 w-4 text-primary" />
-                                            <span className="text-sm font-medium">{manager.phone}</span>
+                                            <span className="text-sm font-medium">{managerPhone}</span>
                                         </div>
                                         <div className="flex items-center space-x-2 px-3 py-1 bg-white/60 rounded-full">
                                             <Mail className="h-4 w-4 text-primary" />
-                                            <span className="text-sm font-medium">{manager.email}</span>
+                                            <span className="text-sm font-medium">{managerEmail}</span>
                                         </div>
                                     </div>
                                 </div>
-                                
+
                             </div>
                         </div>
                     </div>
@@ -67,7 +76,7 @@ export function ManagerProfile({ manager, hostel }: ManagerProfileProps) {
                             <div className="space-y-2">
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Kinh nghiệm:</span>
-                                    <span className="font-medium">{manager.experience}</span>
+                                    <span className="font-medium">{managerExperience}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Khu trọ quản lý:</span>
@@ -75,18 +84,18 @@ export function ManagerProfile({ manager, hostel }: ManagerProfileProps) {
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Tổng số phòng:</span>
-                                    <span className="font-medium">{hostel.rooms} phòng</span>
+                                    <span className="font-medium">{totalRooms} phòng</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Tỷ lệ lấp đầy:</span>
                                     <span className="font-medium text-primary">
-                                        {Math.round((hostel.occupancy / hostel.rooms) * 100)}%
+                                        {occupancyPct}%
                                     </span>
                                 </div>
                             </div>
                         </div>
 
-                        
+
                     </div>
                 </div>
             </CardContent>

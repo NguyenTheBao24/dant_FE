@@ -59,4 +59,26 @@ export async function deleteCanHo(id) {
     return { id }
 }
 
+// Tạo danh sách căn hộ cố định cho một tòa nhà
+export async function createFixedCanHoForToaNha(toaNhaId, total = 10) {
+    if (!isReady()) return []
+    const items = []
+    const defaultAreas = [20, 25, 30]
+    const defaultPrices = [2500000, 3500000, 4500000]
+    for (let i = 1; i <= total; i++) {
+        const soCan = `A${String(i).padStart(3, '0')}`
+        const idx = (i - 1) % 3
+        items.push({
+            so_can: soCan,
+            dien_tich: defaultAreas[idx],
+            trang_thai: 'trong',
+            toa_nha_id: toaNhaId,
+            gia_thue: defaultPrices[idx],
+        })
+    }
+    const { data, error } = await supabase.from('can_ho').insert(items).select()
+    if (error) throw error
+    return data || []
+}
+
 

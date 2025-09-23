@@ -18,7 +18,7 @@ import { Input } from "@/components/admin/ui/input"
 import { Label } from "@/components/admin/ui/label"
 import { Textarea } from "@/components/admin/ui/textarea"
 import { useState, useEffect, useRef } from "react"
-import { getAvailableRoomsByHostel } from "@/services/rooms.service"
+// import { getAvailableRoomsByHostel } from "@/services/rooms.service"
 
 interface CustomersTabProps {
     filteredTenants: any[]
@@ -64,27 +64,27 @@ export function CustomersTab({
 
     // Load danh sách phòng còn trống khi selectedHostel thay đổi
     useEffect(() => {
-        const loadAvailableRooms = async () => {
-            if (!selectedHostel?.id) {
-                setAvailableRooms([])
-                return
-            }
+        // const loadAvailableRooms = async () => {
+        //     if (!selectedHostel?.id) {
+        //         setAvailableRooms([])
+        //         return
+        //     }
 
-            setIsLoadingRooms(true)
-            try {
-                const rooms = await getAvailableRoomsByHostel(selectedHostel.id)
-                console.log('Loaded available rooms:', rooms)
-                setAvailableRooms(rooms || [])
-            } catch (error) {
-                console.error('Failed to load available rooms:', error)
-                // Không set empty array, để service tự xử lý fallback
-                setAvailableRooms([])
-            } finally {
-                setIsLoadingRooms(false)
-            }
-        }
+        //     setIsLoadingRooms(true)
+        //     try {
+        //         // const rooms = await listAvailableCanHoByToaNha(selectedHostel.id)
+        //         console.log('Loaded available rooms:', rooms)
+        //         setAvailableRooms(rooms || [])
+        //     } catch (error) {
+        //         console.error('Failed to load available rooms:', error)
+        //         // Không set empty array, để service tự xử lý fallback
+        //         setAvailableRooms([])
+        //     } finally {
+        //         setIsLoadingRooms(false)
+        //     }
+        // }
 
-        loadAvailableRooms()
+        // loadAvailableRooms()
     }, [selectedHostel])
 
     // Lọc phòng theo từ khóa tìm kiếm

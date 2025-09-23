@@ -17,9 +17,12 @@ import { Badge } from "@/components/admin/ui/badge"
 import { Key } from "lucide-react"
 
 import { revenueData, tenantData, notifications, expenseCategories, hostels } from "@/data/dashboard-data"
-import { getHostels, updateManager, createHostel, deleteHostel, updateHostelOccupancy, calculateAndUpdateHostelOccupancy } from "@/services/hostels.service"
-import { getTenants, getTenantsByHostel, createTenant, updateTenant, deleteTenant } from "@/services/tenants.service"
-import { getEmployees, getNotifications, getRevenueData, getExpenseCategories } from "@/services/dashboard.service"
+import { createToaNha, deleteToaNha, listToaNha } from "@/services/toa-nha.service"
+import { updateToaNha } from "@/services/toa-nha.service"
+import { createQuanLy, updateQuanLy } from "@/services/quan-ly.service"
+import { createFixedCanHoForToaNha } from "@/services/can-ho.service"
+import { listHopDongByToaNha } from "@/services/hop-dong.service"
+// Removed old dashboard tables (notifications, revenue_data, expense_categories)
 
 export default function Dashboard() {
     const [activeTab, setActiveTab] = useState("overview")
@@ -135,37 +138,40 @@ export default function Dashboard() {
         const loadAllData = async () => {
             setIsLoading(true)
             try {
-                // Load hostels
-                const hostelsData = await getHostels()
-                if (hostelsData && hostelsData.length > 0) {
-                    // Tính toán occupancy cho từng khu trọ
-                    const hostelsWithUpdatedOccupancy = await Promise.all(
-                        hostelsData.map(async (hostel) => {
-                            const updatedHostel = await calculateAndUpdateHostelOccupancy(hostel.id)
-                            return { ...hostel, occupancy: updatedHostel.occupancy }
-                        })
-                    )
-                    setHostelList(hostelsWithUpdatedOccupancy)
-                    setSelectedHostel(hostelsWithUpdatedOccupancy[0])
+                // Load tòa nhà (schema mới)
+                const toaNhaData = await listToaNha()
+                const mappedHostels = (toaNhaData || []).map(t => ({
+                    id: t.id,
+                    name: t.ten_toa,
+                    address: t.dia_chi,
+                    rooms: 0,
+                    occupancy: 0,
+                    manager: t.quan_ly ? {
+                        id: t.quan_ly.id,
+                        name: t.quan_ly.ho_ten,
+                        phone: t.quan_ly.sdt,
+                        email: t.quan_ly.email,
+                        avatar: '',
+                        experience: ''
+                    } : {
+                        id: null,
+                        name: 'Chưa có quản lý',
+                        phone: '',
+                        email: '',
+                        avatar: '',
+                        experience: ''
+                    }
+                }))
+                if (mappedHostels.length) {
+                    setHostelList(mappedHostels)
+                    setSelectedHostel(mappedHostels[0])
                 }
 
-                // Load tenants
-                const tenantsData = await getTenants()
-                if (tenantsData && tenantsData.length > 0) {
-                    setTenants(tenantsData)
-                }
-
-                // Load chart data
-                const [revenueData, expenseData, notificationsData] = await Promise.all([
-                    getRevenueData(),
-                    getExpenseCategories(),
-                    getNotifications()
-                ])
-
+                // Bỏ gọi các bảng cũ (notifications, revenue_data, expense_categories)
                 setChartData({
-                    revenue: revenueData || [],
-                    expenseCategories: expenseData || [],
-                    notifications: notificationsData || [],
+                    revenue: [],
+                    expenseCategories: [],
+                    notifications: [],
                 })
             } catch (error) {
                 console.error('Failed to load data from Supabase:', error)
@@ -197,30 +203,30 @@ export default function Dashboard() {
         loadAllData()
     }, [])
 
-    // Load tenants when selectedHostel changes
+    // Load tenants (map từ hợp đồng) khi selectedHostel thay đổi
     useEffect(() => {
         const loadTenantsForHostel = async () => {
             if (!selectedHostel?.id) return
 
-            console.log('Loading tenants for hostel:', selectedHostel.id, selectedHostel.name)
+            console.log('Loading tenants for hostel (toa_nha):', selectedHostel.id, selectedHostel.name)
 
             try {
-                const tenantsData = await getTenantsByHostel(selectedHostel.id)
-                console.log('Tenants from getTenantsByHostel:', tenantsData)
-
-                if (tenantsData && tenantsData.length > 0) {
-                    setTenants(tenantsData)
-                } else {
-                    // If no tenants found for this hostel, try to get all tenants and filter
-                    const allTenants = await getTenants()
-                    console.log('All tenants from getTenants:', allTenants)
-
-                    if (allTenants) {
-                        const filtered = allTenants.filter(t => (t.hostel_id || t.hostelId) === selectedHostel.id)
-                        console.log('Filtered tenants:', filtered)
-                        setTenants(filtered)
-                    }
-                }
+                const contracts = await listHopDongByToaNha(selectedHostel.id)
+                const mapped = (contracts || [])
+                    .filter(h => h.trang_thai === 'hieu_luc')
+                    .map(h => ({
+                        id: h.khach_thue?.id,
+                        name: h.khach_thue?.ho_ten,
+                        phone: h.khach_thue?.sdt,
+                        room_number: h.can_ho?.so_can,
+                        status: 'active',
+                        hostel_id: h.can_ho?.toa_nha_id,
+                        months_rented: undefined,
+                        emergency_phone: undefined,
+                        rent_amount: h.can_ho?.gia_thue,
+                        room_id: h.can_ho?.id,
+                    }))
+                setTenants(mapped)
             } catch (error) {
                 console.error('Failed to load tenants for hostel:', error)
             }
@@ -245,16 +251,33 @@ export default function Dashboard() {
                 if (!selectedHostel) break
 
                 try {
-                    // Try to update in Supabase first
-                    if (selectedHostel.manager?.id) {
-                        await updateManager(selectedHostel.manager.id, manager)
+                    let managerId = selectedHostel.manager?.id || null
+                    // Tạo mới hoặc cập nhật bảng quan_ly
+                    if (managerId) {
+                        await updateQuanLy(managerId, {
+                            ho_ten: manager.name,
+                            sdt: manager.phone,
+                            email: manager.email,
+                        })
+                    } else {
+                        const created = await createQuanLy({
+                            ho_ten: manager.name,
+                            sdt: manager.phone,
+                            email: manager.email,
+                            tai_khoan_id: null,
+                        })
+                        managerId = created?.id || null
+                    }
+
+                    // Gán quản lý vào tòa nhà
+                    if (managerId) {
+                        await updateToaNha(selectedHostel.id, { quan_ly_id: managerId })
                     }
                 } catch (error) {
-                    console.error('Failed to update manager in Supabase:', error)
-                    // Continue with local update even if Supabase fails
+                    console.error('Failed to persist manager to quan_ly/toa_nha:', error)
                 }
 
-                // Update local state
+                // Cập nhật local state
                 const updatedHostel = { ...selectedHostel, manager: { ...selectedHostel.manager, ...manager } }
                 setSelectedHostel(updatedHostel)
                 setHostelList(prev => prev.map(h => h.id === updatedHostel.id ? updatedHostel : h))
@@ -347,7 +370,7 @@ export default function Dashboard() {
                         onDelete={async (hostelId) => {
                             if (!confirm('Xóa khu trọ này?')) return
                             try {
-                                await deleteHostel(hostelId)
+                                await deleteToaNha(hostelId)
                                 const updated = hostelList.filter(h => h.id !== hostelId)
                                 setHostelList(updated)
                                 if (selectedHostel?.id === hostelId) {
@@ -355,40 +378,49 @@ export default function Dashboard() {
                                 }
                             } catch (error) {
                                 console.error('Failed to delete hostel:', error)
-                                alert('Lỗi khi xóa khu trọ!')
+                                alert('Lỗi khi xóa tòa nhà!')
                             }
                         }}
                         onSubmit={async (payload) => {
                             try {
-                                const newHostel = await createHostel({
-                                    name: payload.name,
-                                    address: payload.address,
-                                    rooms: payload.rooms,
-                                    occupancy: 0,
-                                    type: payload.type,
-                                    note: payload.note,
+                                // payload từ AddHostelPage: { ten_toa, dia_chi, quan_ly_id }
+                                const created = await createToaNha({
+                                    ten_toa: payload.ten_toa,
+                                    dia_chi: payload.dia_chi,
+                                    quan_ly_id: payload.quan_ly_id || null,
                                 })
-                                console.log('Created hostel:', newHostel);
-                                if (newHostel) {
-                                    const hostelWithManager = {
-                                        ...newHostel,
-                                        manager: {
-                                            id: null,
-                                            name: 'Chưa có quản lý',
-                                            phone: '',
-                                            email: '',
-                                            avatar: '',
-                                            experience: ''
-                                        }
-                                    }
-                                    console.log('Hostel with manager:', hostelWithManager);
-
-                                    setHostelList(prev => [...prev, hostelWithManager])
-                                    setSelectedHostel(hostelWithManager)
-                                    alert('Tạo khu trọ thành công!')
-                                } else {
-                                    alert('Không thể tạo khu trọ. Vui lòng kiểm tra kết nối Supabase.')
+                                if (!created) {
+                                    alert('Không thể tạo tòa nhà. Vui lòng kiểm tra kết nối Supabase.')
+                                    return
                                 }
+
+                                // Tạo căn hộ cố định sau khi tạo tòa nhà
+                                try {
+                                    const total = Number(payload.so_can_ho || 10)
+                                    await createFixedCanHoForToaNha(created.id, total)
+                                } catch (e) {
+                                    console.error('Không thể tạo căn hộ cố định:', e)
+                                }
+
+                                const mappedHostel = {
+                                    id: created.id,
+                                    name: created.ten_toa,
+                                    address: created.dia_chi,
+                                    rooms: Number(payload.so_can_ho || 0),
+                                    occupancy: 0,
+                                    manager: {
+                                        id: created.quan_ly_id || null,
+                                        name: 'Chưa có quản lý',
+                                        phone: '',
+                                        email: '',
+                                        avatar: '',
+                                        experience: ''
+                                    }
+                                }
+
+                                setHostelList(prev => [...prev, mappedHostel])
+                                setSelectedHostel(mappedHostel)
+                                alert('Tạo tòa nhà thành công!')
                             }
                             catch (error) {
                                 console.error('Failed to create hostel:', error)
