@@ -14,6 +14,8 @@ interface ManagerProfileProps {
         avatar: string
         experience: string
         specialties: string[]
+        username?: string
+        role?: string
     }
     hostel: {
         name: string
@@ -28,6 +30,8 @@ export function ManagerProfile({ manager, hostel }: ManagerProfileProps) {
     const managerPhone = manager?.phone && manager.phone.trim() !== '' ? manager.phone : 'Chưa cập nhật'
     const managerEmail = manager?.email && manager.email.trim() !== '' ? manager.email : 'Chưa cập nhật'
     const managerExperience = manager?.experience && manager.experience.trim() !== '' ? manager.experience : 'Chưa cập nhật'
+    const accountUsername = manager?.username && manager.username.trim() !== '' ? manager.username : 'Chưa cập nhật'
+    const accountRole = manager?.role && manager.role.trim() !== '' ? manager.role : 'Chưa cập nhật'
     const totalRooms = Number(hostel?.rooms || 0)
     const occupied = Number(hostel?.occupancy || 0)
     const occupancyPct = totalRooms > 0 ? Math.round((occupied / totalRooms) * 100) : 0
@@ -51,7 +55,7 @@ export function ManagerProfile({ manager, hostel }: ManagerProfileProps) {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{managerName}</h3>
-                                    <p className="text-slate-600 dark:text-slate-400 text-lg">Quản lý khu trọ</p>
+                                    <p className="text-slate-600 dark:text-slate-400 text-lg">{managerName}</p>
                                     <div className="flex items-center space-x-6 mt-3">
                                         <div className="flex items-center space-x-2 px-3 py-1 bg-white/60 rounded-full">
                                             <Phone className="h-4 w-4 text-primary" />
@@ -94,8 +98,19 @@ export function ManagerProfile({ manager, hostel }: ManagerProfileProps) {
                                 </div>
                             </div>
                         </div>
-
-
+                        <div>
+                            <h4 className="font-semibold mb-3">Tài khoản</h4>
+                            <div className="space-y-2">
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Username:</span>
+                                    <span className="font-medium">{accountUsername}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Role:</span>
+                                    <span className="font-medium">{accountRole}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </CardContent>

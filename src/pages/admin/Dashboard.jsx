@@ -20,6 +20,7 @@ import { revenueData, tenantData, notifications, expenseCategories, hostels } fr
 import { createToaNha, deleteToaNha, listToaNha } from "@/services/toa-nha.service"
 import { updateToaNha } from "@/services/toa-nha.service"
 import { createQuanLy, updateQuanLy } from "@/services/quan-ly.service"
+import { createTaiKhoan } from "@/services/tai-khoan.service"
 import { createFixedCanHoForToaNha } from "@/services/can-ho.service"
 import { listHopDongByToaNha } from "@/services/hop-dong.service"
 // Removed old dashboard tables (notifications, revenue_data, expense_categories)
@@ -252,6 +253,7 @@ export default function Dashboard() {
 
                 try {
                     let managerId = selectedHostel.manager?.id || null
+                    let taiKhoanId = selectedHostel.manager?.tai_khoan_id || null
                     // Tạo mới hoặc cập nhật bảng quan_ly
                     if (managerId) {
                         await updateQuanLy(managerId, {
@@ -260,11 +262,21 @@ export default function Dashboard() {
                             email: manager.email,
                         })
                     } else {
+                        // Tạo tài khoản cho quản lý nếu chưa có
+                        if (!taiKhoanId) {
+                            const username = manager.email || `manager_${Date.now()}`
+                            const account = await createTaiKhoan({
+                                username,
+                                password: 'manager@123',
+                                role: 'quan_ly'
+                            })
+                            taiKhoanId = account?.id || null
+                        }
                         const created = await createQuanLy({
                             ho_ten: manager.name,
                             sdt: manager.phone,
                             email: manager.email,
-                            tai_khoan_id: null,
+                            tai_khoan_id: taiKhoanId,
                         })
                         managerId = created?.id || null
                     }
@@ -281,6 +293,39 @@ export default function Dashboard() {
                 const updatedHostel = { ...selectedHostel, manager: { ...selectedHostel.manager, ...manager } }
                 setSelectedHostel(updatedHostel)
                 setHostelList(prev => prev.map(h => h.id === updatedHostel.id ? updatedHostel : h))
+                break
+            }
+            case "create_account": {
+                if (!selectedHostel) break
+                try {
+                    const username = manager.email || `manager_${Date.now()}`
+                    const account = await createTaiKhoan({
+                        username,
+                        password: 'manager@123',
+                        role: 'quan_ly'
+                    })
+
+                    // Cập nhật quan_ly.tai_khoan_id nếu đã có quản lý
+                    if (selectedHostel.manager?.id) {
+                        await updateQuanLy(selectedHostel.manager.id, { tai_khoan_id: account.id })
+                    }
+
+                    // Update local state để hiển thị ngay username/role
+                    const updatedHostel = {
+                        ...selectedHostel,
+                        manager: {
+                            ...selectedHostel.manager,
+                            username: account.username,
+                            role: account.role,
+                        }
+                    }
+                    setSelectedHostel(updatedHostel)
+                    setHostelList(prev => prev.map(h => h.id === updatedHostel.id ? updatedHostel : h))
+                    alert('Đã cấp tài khoản cho quản lý')
+                } catch (error) {
+                    console.error('Failed to create manager account:', error)
+                    alert('Không thể cấp tài khoản. Vui lòng kiểm tra cấu hình Supabase và RLS.')
+                }
                 break
             }
             case "reports":
