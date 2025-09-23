@@ -62,23 +62,6 @@ export function CustomersTab({
         rentMonths: "",
     })
 
-    // State cho tìm kiếm
-    const [searchTerm, setSearchTerm] = useState("")
-    const [searchField, setSearchField] = useState("all") // all, name, room, phone, status, address, rentMonths
-
-    // Hàm lấy nhãn trường tìm kiếm
-    const getFieldLabel = (field: string) => {
-        switch (field) {
-            case 'name': return 'Tên'
-            case 'room': return 'Số phòng'
-            case 'phone': return 'Số điện thoại'
-            case 'status': return 'Trạng thái'
-            case 'address': return 'Địa chỉ'
-            case 'rentMonths': return 'Thời hạn thuê'
-            default: return 'Tất cả'
-        }
-    }
-
     // Load danh sách phòng còn trống khi selectedHostel thay đổi
     useEffect(() => {
         const loadAvailableRooms = async () => {
@@ -115,40 +98,6 @@ export function CustomersTab({
         room.room_number.toLowerCase().includes(editRoomSearchTerm.toLowerCase()) ||
         room.room_type.toLowerCase().includes(editRoomSearchTerm.toLowerCase())
     )
-
-    // Lọc khách thuê dựa trên tìm kiếm
-    const searchFilteredTenants = filteredTenants.filter(tenant => {
-        if (!searchTerm) return true
-
-        const searchLower = searchTerm.toLowerCase()
-
-        switch (searchField) {
-            case 'name':
-                return tenant.name?.toLowerCase().includes(searchLower)
-            case 'room':
-                return (tenant.room_number || tenant.roomNumber)?.toLowerCase().includes(searchLower)
-            case 'phone':
-                return tenant.phone?.includes(searchTerm) ||
-                    (tenant.emergency_phone || tenant.emergencyPhone)?.includes(searchTerm)
-            case 'status':
-                return tenant.status?.toLowerCase().includes(searchLower)
-            case 'address':
-                return tenant.address?.toLowerCase().includes(searchLower)
-            case 'rentMonths':
-                return (tenant.months_rented || tenant.rentMonths)?.toString().includes(searchTerm)
-            case 'all':
-            default:
-                return (
-                    tenant.name?.toLowerCase().includes(searchLower) ||
-                    (tenant.room_number || tenant.roomNumber)?.toLowerCase().includes(searchLower) ||
-                    tenant.phone?.includes(searchTerm) ||
-                    (tenant.emergency_phone || tenant.emergencyPhone)?.includes(searchTerm) ||
-                    tenant.status?.toLowerCase().includes(searchLower) ||
-                    tenant.address?.toLowerCase().includes(searchLower) ||
-                    (tenant.months_rented || tenant.rentMonths)?.toString().includes(searchTerm)
-                )
-        }
-    })
 
     // Xử lý chọn phòng
     const handleRoomSelect = (room: any) => {
@@ -439,54 +388,10 @@ export function CustomersTab({
                         </div>
                         <div className="flex items-center space-x-2">
                             <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
-                                {searchFilteredTenants.length} khách thuê
+                                {filteredTenants.length} khách thuê
                             </Badge>
                         </div>
                     </div>
-
-                    {/* Thanh tìm kiếm */}
-                    <div className="flex items-center space-x-4 mt-4">
-                        <div className="flex-1 relative">
-                            <Input
-                                placeholder="Tìm kiếm khách thuê..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pr-10"
-                            />
-                            {searchTerm && (
-                                <button
-                                    onClick={() => setSearchTerm("")}
-                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                >
-                                    ✕
-                                </button>
-                            )}
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <span className="text-sm text-gray-600">Tìm theo:</span>
-                            <select
-                                value={searchField}
-                                onChange={(e) => setSearchField(e.target.value)}
-                                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="all">Tất cả</option>
-                                <option value="name">Tên</option>
-                                <option value="room">Số phòng</option>
-                                <option value="phone">Số điện thoại</option>
-                                <option value="status">Trạng thái</option>
-                                <option value="address">Địa chỉ</option>
-                                <option value="rentMonths">Thời hạn thuê</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Hiển thị kết quả tìm kiếm */}
-                    {searchTerm && (
-                        <div className="mt-2 text-sm text-gray-600">
-                            Tìm thấy {searchFilteredTenants.length} kết quả cho "{searchTerm}"
-                            {searchField !== 'all' && ` trong ${getFieldLabel(searchField)}`}
-                        </div>
-                    )}
                 </CardHeader>
                 <CardContent className="p-0">
                     <div className="overflow-hidden rounded-b-lg">
@@ -504,7 +409,7 @@ export function CustomersTab({
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {searchFilteredTenants.map((tenant, index) => (
+                                {filteredTenants.map((tenant, index) => (
                                     <TableRow key={tenant.id} className={`hover:bg-blue-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
                                         <TableCell className="font-semibold text-gray-900 py-4">
                                             <div className="flex items-center">

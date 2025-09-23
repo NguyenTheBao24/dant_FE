@@ -1,0 +1,78 @@
+import { supabase } from './supabase-client'
+import { updateCanHo } from './can-ho.service'
+
+function isReady() {
+    return !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY)
+}
+
+export async function listHopDong() {
+    if (!isReady()) return []
+    const { data, error } = await supabase
+        .from('hop_dong')
+        .select('*, can_ho:can_ho_id(id, so_can, toa_nha_id, gia_thue), khach_thue:khach_thue_id(id, ho_ten, sdt, email)')
+        .order('ngay_bat_dau', { ascending: false })
+    if (error) throw error
+    return data || []
+}
+
+export async function listHopDongByToaNha(toaNhaId) {
+    if (!isReady()) return []
+    const { data, error } = await supabase
+        .from('hop_dong')
+        .select('*, can_ho:can_ho_id(id, so_can, toa_nha_id, gia_thue), khach_thue:khach_thue_id(id, ho_ten, sdt, email)')
+        .eq('can_ho.toa_nha_id', toaNhaId)
+        .order('ngay_bat_dau', { ascending: false })
+    if (error) throw error
+    return data || []
+}
+
+export async function createHopDong(payload) {
+    if (!isReady()) return null
+    const { data, error } = await supabase.from('hop_dong').insert([{
+        can_ho_id: payload.can_ho_id,
+        khach_thue_id: payload.khach_thue_id,
+        ngay_bat_dau: payload.ngay_bat_dau,
+        ngay_ket_thuc: payload.ngay_ket_thuc || null,
+        trang_thai: payload.trang_thai || 'hieu_luc'
+    }]).select().single()
+    if (error) throw error
+    try { await updateCanHo(payload.can_ho_id, { trang_thai: 'da_thue' }) } catch { }
+    return data
+}
+
+export async function updateHopDong(id, updates) {
+    if (!isReady()) return null
+    const { data, error } = await supabase.from('hop_dong').update(updates).eq('id', id).select().single()
+    if (error) throw error
+    if (updates.trang_thai && updates.trang_thai !== 'hieu_luc') {
+        try { await updateCanHo(data.can_ho_id, { trang_thai: 'trong' }) } catch { }
+    }
+    return data
+}
+
+export async function deleteHopDong(id) {
+    if (!isReady()) return { id }
+    const { data, error } = await supabase.from('hop_dong').select('can_ho_id').eq('id', id).single()
+    if (error) throw error
+    const { error: delErr } = await supabase.from('hop_dong').delete().eq('id', id)
+    if (delErr) throw delErr
+    try { if (data?.can_ho_id) await updateCanHo(data.can_ho_id, { trang_thai: 'trong' }) } catch { }
+    return { id }
+}
+
+export async function listHopDongSapHetHan(toaNhaId, days = 30) {
+    if (!isReady()) return []
+    const limitDate = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    const { data, error } = await supabase
+        .from('hop_dong')
+        .select('*, can_ho:can_ho_id(id, so_can, toa_nha_id), khach_thue:khach_thue_id(id, ho_ten)')
+        .eq('trang_thai', 'hieu_luc')
+        .eq('can_ho.toa_nha_id', toaNhaId)
+        .not('ngay_ket_thuc', 'is', null)
+        .lte('ngay_ket_thuc', limitDate)
+        .order('ngay_ket_thuc', { ascending: true })
+    if (error) throw error
+    return data || []
+}
+
+
