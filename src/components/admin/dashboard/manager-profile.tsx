@@ -1,6 +1,7 @@
 "use client"
 
 import { Card, CardContent } from "@/components/admin/ui/card"
+import { useState } from "react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/admin/ui/avatar"
 import { Phone, Mail } from "lucide-react"
@@ -16,6 +17,7 @@ interface ManagerProfileProps {
         specialties: string[]
         username?: string
         role?: string
+        password?: string
     }
     hostel: {
         name: string
@@ -31,7 +33,7 @@ export function ManagerProfile({ manager, hostel }: ManagerProfileProps) {
     const managerEmail = manager?.email && manager.email.trim() !== '' ? manager.email : 'Chưa cập nhật'
     const managerExperience = manager?.experience && manager.experience.trim() !== '' ? manager.experience : 'Chưa cập nhật'
     const accountUsername = manager?.username && manager.username.trim() !== '' ? manager.username : 'Chưa cập nhật'
-    const accountRole = manager?.role && manager.role.trim() !== '' ? manager.role : 'Chưa cập nhật'
+    const accountPassword = manager?.password && manager.password.trim() !== '' ? manager.password : '********'
     const totalRooms = Number(hostel?.rooms || 0)
     const occupied = Number(hostel?.occupancy || 0)
     const occupancyPct = totalRooms > 0 ? Math.round((occupied / totalRooms) * 100) : 0
@@ -105,9 +107,9 @@ export function ManagerProfile({ manager, hostel }: ManagerProfileProps) {
                                     <span className="text-muted-foreground">Username:</span>
                                     <span className="font-medium">{accountUsername}</span>
                                 </div>
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Role:</span>
-                                    <span className="font-medium">{accountRole}</span>
+                                <div className="flex items-center justify-between gap-3">
+                                    <span className="text-muted-foreground mr-2">Password:</span>
+                                    <span className="font-medium">{accountPassword}</span>
                                 </div>
                             </div>
                         </div>

@@ -153,10 +153,13 @@ export default function Dashboard() {
                         phone: t.quan_ly.sdt,
                         email: t.quan_ly.email,
                         avatar: '',
-                        experience: ''
+                        experience: '',
+                        username: t.quan_ly.tai_khoan?.username,
+                        role: t.quan_ly.tai_khoan?.role,
+                        password: t.quan_ly.tai_khoan?.password,
                     } : {
                         id: null,
-                        name: 'Chưa có quản lý',
+                        name: 'Chưa có quản lýXXX',
                         phone: '',
                         email: '',
                         avatar: '',
@@ -298,10 +301,16 @@ export default function Dashboard() {
             case "create_account": {
                 if (!selectedHostel) break
                 try {
+                    // Nếu đã có tài khoản thì không cấp mới
+                    if (selectedHostel.manager?.username) {
+                        alert('Quản lý đã có tài khoản, không cần cấp mới')
+                        break
+                    }
                     const username = manager.email || `manager_${Date.now()}`
+                    const defaultPassword = 'manager@123'
                     const account = await createTaiKhoan({
                         username,
-                        password: 'manager@123',
+                        password: defaultPassword,
                         role: 'quan_ly'
                     })
 
@@ -317,6 +326,8 @@ export default function Dashboard() {
                             ...selectedHostel.manager,
                             username: account.username,
                             role: account.role,
+                            // Lưu tạm mật khẩu để có thể hiển thị theo nút toggle
+                            password: defaultPassword,
                         }
                     }
                     setSelectedHostel(updatedHostel)
