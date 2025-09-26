@@ -2,6 +2,8 @@
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/admin/ui/select"
 import logoHome from "@/assets/logoHome.png"
+import { useNavigate } from "react-router-dom"
+import { LogOut } from "lucide-react"
 
 interface HeaderProps {
     selectedHostel: any
@@ -11,7 +13,8 @@ interface HeaderProps {
     onSearchChange: (term: string) => void
 }
 
-export function DashboardHeader({ selectedHostel, hostels,  onHostelChange,  }: HeaderProps) {
+export function DashboardHeader({ selectedHostel, hostels, onHostelChange, }: HeaderProps) {
+    const navigate = useNavigate()
     return (
         <header className="border-b border-gray-200 bg-white shadow-sm">
             <div className="flex h-16 items-center px-6">
@@ -26,7 +29,7 @@ export function DashboardHeader({ selectedHostel, hostels,  onHostelChange,  }: 
                     <div className="flex items-center space-x-3">
                         <div className="h-6 w-px bg-gray-300"></div>
                         <Select
-                            value={selectedHostel.id.toString()}
+                            value={selectedHostel?.id.toString()}
                             onValueChange={(value) => {
                                 const hostel = hostels.find((h) => h.id === Number.parseInt(value))
                                 if (hostel) onHostelChange(hostel)
@@ -53,7 +56,15 @@ export function DashboardHeader({ selectedHostel, hostels,  onHostelChange,  }: 
                     </div>
                 </div>
 
-
+                <div className="ml-auto">
+                    <button
+                        onClick={() => navigate('/auth/login')}
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 hover:border-red-300 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-1 transition-colors shadow-sm"
+                    >
+                        <LogOut className="w-4 h-4" />
+                        Đăng xuất
+                    </button>
+                </div>
 
             </div>
         </header>

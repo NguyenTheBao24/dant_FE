@@ -40,3 +40,16 @@ export async function deleteTaiKhoan(id) {
 }
 
 
+export async function loginTaiKhoan(username, password) {
+    if (!isReady()) return null
+    const { data, error } = await supabase
+        .from('tai_khoan')
+        .select('*')
+        .eq('username', username)
+        .eq('password', password)
+        .single()
+    if (error) return null
+    return data
+}
+
+

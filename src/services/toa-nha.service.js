@@ -8,7 +8,7 @@ export async function listToaNha() {
     if (!isReady()) return []
     const { data, error } = await supabase
         .from('toa_nha')
-        .select('*, quan_ly(id, ho_ten, sdt, email, tai_khoan_id, tai_khoan: tai_khoan_id (username, role, password))')
+        .select('*, quan_ly(id, ho_ten, sdt, email, tai_khoan_id, tai_khoan: tai_khoan_id (id, username, role, password))')
         .order('id')
     if (error) throw error
     return data || []
@@ -18,7 +18,7 @@ export async function getToaNhaById(id) {
     if (!isReady()) return null
     const { data, error } = await supabase
         .from('toa_nha')
-        .select('*, quan_ly(id, ho_ten, sdt, email, tai_khoan_id, tai_khoan: tai_khoan_id (username, role, password))')
+        .select('*, quan_ly(id, ho_ten, sdt, email, tai_khoan_id, tai_khoan: tai_khoan_id (id, username, role, password))')
         .eq('id', id)
         .single()
     if (error) throw error

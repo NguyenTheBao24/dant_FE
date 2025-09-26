@@ -38,30 +38,6 @@ export function OverviewPage({ selectedHostel, chartData }: OverviewPageProps) {
     const [revenueByRoomType, setRevenueByRoomType] = useState<RevenueByRoomType[]>([])
     const [isLoading, setIsLoading] = useState(true)
 
-    useEffect(() => {
-        // const loadRevenueData = async () => {
-        //     if (!selectedHostel?.id) return
-
-        //     setIsLoading(true)
-        //     try {
-        //         const [revenues, totalRevenue, byRoomType] = await Promise.all([
-        //             getMonthlyRevenueByRooms(selectedHostel.id),
-        //             getTotalMonthlyRevenue(selectedHostel.id),
-        //             getRevenueByRoomType(selectedHostel.id)
-        //         ])
-
-        //         setRoomRevenues(revenues)
-        //         setTotalMonthlyRevenue(totalRevenue)
-        //         setRevenueByRoomType(byRoomType)
-        //     } catch (error) {
-        //         console.error('Failed to load revenue data:', error)
-        //     } finally {
-        //         setIsLoading(false)
-        //     }
-        // }
-
-        // loadRevenueData()
-    }, [selectedHostel])
 
     return (
         <div className="space-y-6">

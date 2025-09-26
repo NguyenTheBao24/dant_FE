@@ -28,9 +28,8 @@ import { listHopDongByToaNha } from "@/services/hop-dong.service"
 export default function Dashboard() {
     const [activeTab, setActiveTab] = useState("overview")
     const [searchTerm, setSearchTerm] = useState("")
-    const [selectedTenant, setSelectedTenant] = useState(null)
     const [selectedManager, setSelectedManager] = useState(null)
-    const [hostelList, setHostelList] = useState(hostels)
+    const [hostelList, setHostelList] = useState([])
     const [selectedHostel, setSelectedHostel] = useState(hostels[0])
     const [isAddTenantOpen, setIsAddTenantOpen] = useState(false)
     const [isManagerDialogOpen, setIsManagerDialogOpen] = useState(false)
@@ -159,7 +158,7 @@ export default function Dashboard() {
                         password: t.quan_ly.tai_khoan?.password,
                     } : {
                         id: null,
-                        name: 'Chưa có quản lýXXX',
+                        name: 'Chưa có quản lý',
                         phone: '',
                         email: '',
                         avatar: '',
@@ -426,7 +425,28 @@ export default function Dashboard() {
                         onDelete={async (hostelId) => {
                             if (!confirm('Xóa khu trọ này?')) return
                             try {
+                                // nếu có quản lý gắn với tòa nhà, xóa cả quản lý và tài khoản
+                                const target = hostelList.find(h => h.id === hostelId)
+                                const managerId = target?.manager?.id
+                                const accountId = target?.manager?.tai_khoan_id || target?.manager?.tai_khoan?.id
+
                                 await deleteToaNha(hostelId)
+
+                                // xóa quản lý và tài khoản nếu có
+                                try {
+                                    if (managerId) {
+                                        const { deleteQuanLy } = await import('@/services/quan-ly.service')
+                                        await deleteQuanLy(managerId)
+                                        // Thông báo cho các view khác (ContactPage) loại bỏ quản lý khỏi danh sách
+                                        window.dispatchEvent(new CustomEvent('manager-removed', { detail: { managerId } }))
+                                    }
+                                    if (accountId) {
+                                        const { deleteTaiKhoan } = await import('@/services/tai-khoan.service')
+                                        await deleteTaiKhoan(accountId)
+                                    }
+                                } catch (e) {
+                                    console.warn('Cleanup manager/account failed:', e)
+                                }
                                 const updated = hostelList.filter(h => h.id !== hostelId)
                                 setHostelList(updated)
                                 if (selectedHostel?.id === hostelId) {
@@ -514,92 +534,7 @@ export default function Dashboard() {
                 </main>
             </div>
 
-            <Dialog open={isManagerDialogOpen} onOpenChange={setIsManagerDialogOpen}>
-                <DialogContent className="sm:max-w-[700px]">
-                    <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold text-gray-900">
-                            Cài đặt quản lý - {selectedManager?.name}
-                        </DialogTitle>
-                        <DialogDescription className="text-gray-600 text-base">
-                            Cấu hình quyền hạn và chức năng cho quản lý khu trọ.
-                        </DialogDescription>
-                    </DialogHeader>
 
-                    <div className="grid gap-8 py-6">
-                        <div className="space-y-5">
-                            <h4 className="font-semibold flex items-center text-gray-900">
-                                <Key className="mr-3 h-5 w-5 text-blue-600" />
-                                Quyền hạn
-                            </h4>
-
-                            <div className="grid gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                <div className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-100 transition-colors">
-                                    <span className="text-sm font-medium text-gray-700">Quản lý khách thuê</span>
-                                    <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
-                                        Có quyền
-                                    </Badge>
-                                </div>
-                                <div className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-100 transition-colors">
-                                    <span className="text-sm font-medium text-gray-700">Thu chi tiền thuê</span>
-                                    <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
-                                        Có quyền
-                                    </Badge>
-                                </div>
-                                <div className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-100 transition-colors">
-                                    <span className="text-sm font-medium text-gray-700">Bảo trì sửa chữa</span>
-                                    <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
-                                        Có quyền
-                                    </Badge>
-                                </div>
-                                <div className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-100 transition-colors">
-                                    <span className="text-sm font-medium text-gray-700">Xem báo cáo tài chính</span>
-                                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-200">
-                                        Hạn chế
-                                    </Badge>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="space-y-5">
-                            <h4 className="font-semibold text-gray-900">Thông tin liên hệ khẩn cấp</h4>
-                            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-3">
-                                        <Label htmlFor="emergency-contact" className="text-sm font-medium text-gray-700">
-                                            Người liên hệ khẩn cấp
-                                        </Label>
-                                        <Input
-                                            id="emergency-contact"
-                                            placeholder="Tên người liên hệ"
-                                        />
-                                    </div>
-                                    <div className="space-y-3">
-                                        <Label htmlFor="emergency-phone" className="text-sm font-medium text-gray-700">
-                                            SĐT khẩn cấp
-                                        </Label>
-                                        <Input
-                                            id="emergency-phone"
-                                            placeholder="0123456789"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                        <Button
-                            variant="outline"
-                            onClick={() => setIsManagerDialogOpen(false)}
-                        >
-                            Hủy
-                        </Button>
-                        <Button type="submit">
-                            Lưu thay đổi
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
         </div>
     )
 }

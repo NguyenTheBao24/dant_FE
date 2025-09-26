@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logoHome from '../../assets/logoHome.png';
+import { loginTaiKhoan } from '@/services/tai-khoan.service';
 
 
 const Login = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
-        email: '',
+        username: '',
         password: ''
     });
 
@@ -18,12 +19,39 @@ const Login = () => {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Mô phỏng đăng nhập
-        console.log('Login:', formData);
-        // Chuyển hướng đến admin sau khi đăng nhập thành công
-        navigate('/admin/dashboard');
+        try {
+            const account = await loginTaiKhoan(formData.username, formData.password)
+            if (!account) {
+                alert('Sai tài khoản hoặc mật khẩu')
+                return
+            }
+            // Log thông tin tài khoản đang đăng nhập
+            console.log('Đăng nhập thành công:', {
+                id: account.id,
+                username: account.username,
+                role: account.role,
+            })
+            // Lưu thông tin tối thiểu cho phiên làm việc
+            sessionStorage.setItem('auth_user', JSON.stringify({
+                id: account.id,
+                username: account.username,
+                role: account.role,
+            }))
+
+            if (account.role === 'admin') {
+                navigate('/admin/dashboard')
+            } else if (account.role === 'quan_ly') {
+                // Tạm thời điều hướng vào dashboard. Có thể chuyển sang trang riêng cho quản lý nếu cần.
+                navigate('/admin/dashboard')
+            } else {
+                alert('Vai trò không được hỗ trợ')
+            }
+        } catch (err) {
+            console.error('Login failed:', err)
+            alert('Không thể đăng nhập. Vui lòng thử lại.')
+        }
     };
 
     return (
@@ -85,16 +113,16 @@ const Login = () => {
                             <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
                                 <div className="group/input">
                                     <label className="block text-white font-semibold mb-3">
-                                        Email
+                                        Tài khoản
                                     </label>
                                     <input
-                                        type="email"
-                                        name="email"
-                                        value={formData.email}
+                                        type="text"
+                                        name="username"
+                                        value={formData.username}
                                         onChange={handleInputChange}
                                         required
                                         className="w-full px-6 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl focus:ring-2 focus:ring-blue-400 focus:border-transparent text-white placeholder-white/60 transition-all duration-300 group-hover/input:bg-white/15 focus:bg-white/15"
-                                        placeholder="Nhập email của bạn"
+                                        placeholder="Nhập tài khoản của bạn"
                                     />
                                 </div>
 

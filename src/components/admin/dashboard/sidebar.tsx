@@ -88,7 +88,7 @@ export function DashboardSidebar({ activeTab, selectedHostel, onTabChange }: Sid
                         onClick={() => onTabChange("contact")}
                     >
                         <UserCheck className="mr-3 h-5 w-5" />
-                        <span className="font-semibold">Nhân viên liên hệ</span>
+                        <span className="font-semibold">Quản lý khu trọ </span>
                     </Button>
 
                     <Button

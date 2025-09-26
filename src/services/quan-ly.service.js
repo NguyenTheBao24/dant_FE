@@ -6,7 +6,10 @@ function isReady() {
 
 export async function listQuanLy() {
     if (!isReady()) return []
-    const { data, error } = await supabase.from('quan_ly').select('*').order('id')
+    const { data, error } = await supabase
+        .from('quan_ly')
+        .select('*, tai_khoan: tai_khoan_id (id, username, role, password), toa_nha: toa_nha (id, ten_toa)')
+        .order('id')
     if (error) throw error
     return data || []
 }
