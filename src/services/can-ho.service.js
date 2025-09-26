@@ -15,6 +15,23 @@ export async function listCanHoByToaNha(toaNhaId) {
     return data || []
 }
 
+export async function countCanHoByToaNha(toaNhaId) {
+    if (!isReady()) return 0
+    const { count, error } = await supabase
+        .from('can_ho')
+        .select('*', { count: 'exact', head: true })
+        .eq('toa_nha_id', toaNhaId)
+    if (error) throw error
+    if (typeof count === 'number') return count
+    // Fallback: fetch minimal rows and return length (in case count unsupported)
+    const { data, error: err2 } = await supabase
+        .from('can_ho')
+        .select('id')
+        .eq('toa_nha_id', toaNhaId)
+    if (err2) throw err2
+    return (data || []).length
+}
+
 export async function listAvailableCanHoByToaNha(toaNhaId) {
     if (!isReady()) return []
     const { data, error } = await supabase

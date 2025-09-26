@@ -9,7 +9,8 @@ import { Input } from "@/components/admin/ui/input"
 import { Label } from "@/components/admin/ui/label"
 import { Button } from "@/components/admin/ui/button"
 import { listQuanLy, createQuanLy, updateQuanLy, deleteQuanLy } from "@/services/quan-ly.service"
-import { createTaiKhoan, listTaiKhoan } from "@/services/tai-khoan.service"
+import { createTaiKhoan, listTaiKhoan, deleteTaiKhoan } from "@/services/tai-khoan.service"
+import { listToaNha } from "@/services/toa-nha.service"
 import { updateToaNha } from "@/services/toa-nha.service"
 
 interface ContactPageProps {
@@ -29,7 +30,27 @@ export function ContactPage({ selectedHostel, onManagerAction }: ContactPageProp
         setIsLoading(true)
         try {
             const rows = await listQuanLy()
-            setManagers(rows || [])
+
+            // Cleanup orphan managers: managers not linked to any existing building
+            const buildings = await listToaNha()
+            const validManagerIds = new Set((buildings || []).map((b: any) => b.quan_ly_id).filter(Boolean))
+            const orphanManagers = (rows || []).filter((m: any) => !validManagerIds.has(m.id))
+
+            if (orphanManagers.length) {
+                for (const m of orphanManagers) {
+                    try {
+                        await deleteQuanLy(m.id)
+                        if (m.tai_khoan?.id) {
+                            await deleteTaiKhoan(m.tai_khoan.id)
+                        }
+                    } catch (e) {
+                        console.warn('Failed to cleanup orphan manager', m.id, e)
+                    }
+                }
+            }
+
+            const filtered = (rows || []).filter((m: any) => validManagerIds.has(m.id))
+            setManagers(filtered)
         } catch (e) {
             console.error('Failed to load managers:', e)
             // Fallback: nếu không tải được, thử dùng manager của selectedHostel

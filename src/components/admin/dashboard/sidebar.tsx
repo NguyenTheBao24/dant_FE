@@ -12,6 +12,8 @@ interface SidebarProps {
 
 export function DashboardSidebar({ activeTab, selectedHostel, onTabChange }: SidebarProps) {
     return (
+
+        console.log("selectedHostel", selectedHostel),
         <aside className="w-80 border-r border-gray-200 bg-white">
             <div className="p-6">
                 <Card className="mb-8 border-0 shadow-lg bg-blue-50">

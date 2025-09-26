@@ -21,7 +21,7 @@ import { createToaNha, deleteToaNha, listToaNha } from "@/services/toa-nha.servi
 import { updateToaNha } from "@/services/toa-nha.service"
 import { createQuanLy, updateQuanLy } from "@/services/quan-ly.service"
 import { createTaiKhoan } from "@/services/tai-khoan.service"
-import { createFixedCanHoForToaNha } from "@/services/can-ho.service"
+import { createFixedCanHoForToaNha, countCanHoByToaNha } from "@/services/can-ho.service"
 import { listHopDongByToaNha } from "@/services/hop-dong.service"
 // Removed old dashboard tables (notifications, revenue_data, expense_categories)
 
@@ -140,11 +140,11 @@ export default function Dashboard() {
             try {
                 // Load tòa nhà (schema mới)
                 const toaNhaData = await listToaNha()
-                const mappedHostels = (toaNhaData || []).map(t => ({
+                const mappedHostels = await Promise.all((toaNhaData || []).map(async t => ({
                     id: t.id,
                     name: t.ten_toa,
                     address: t.dia_chi,
-                    rooms: 0,
+                    rooms: await countCanHoByToaNha(t.id),
                     occupancy: 0,
                     manager: t.quan_ly ? {
                         id: t.quan_ly.id,
@@ -164,7 +164,7 @@ export default function Dashboard() {
                         avatar: '',
                         experience: ''
                     }
-                }))
+                })))
                 if (mappedHostels.length) {
                     setHostelList(mappedHostels)
                     setSelectedHostel(mappedHostels[0])
@@ -478,11 +478,17 @@ export default function Dashboard() {
                                     console.error('Không thể tạo căn hộ cố định:', e)
                                 }
 
+                                // Recalculate rooms after creation
+                                let roomsCount = 0
+                                try {
+                                    roomsCount = await countCanHoByToaNha(created.id)
+                                } catch { }
+
                                 const mappedHostel = {
                                     id: created.id,
                                     name: created.ten_toa,
                                     address: created.dia_chi,
-                                    rooms: Number(payload.so_can_ho || 0),
+                                    rooms: roomsCount,
                                     occupancy: 0,
                                     manager: {
                                         id: created.quan_ly_id || null,
