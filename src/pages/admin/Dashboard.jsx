@@ -43,6 +43,32 @@ export default function Dashboard() {
         notifications: [],
     })
 
+    // Tính tổng số phòng đã thuê = số khách thuê active của tòa nhà (không bị ảnh hưởng bởi tìm kiếm)
+    const occupiedRoomsCount = tenants
+        .filter((tenant) => selectedHostel && (tenant.hostel_id || tenant.hostelId) === selectedHostel.id)
+        .filter((tenant) => tenant.status === 'active').length
+
+    // Tự động cập nhật occupancy khi tenants thay đổi
+    useEffect(() => {
+        if (selectedHostel?.id) {
+            const totalRooms = selectedHostel.rooms || 0
+            const newOccupancy = totalRooms > 0 ? Math.round((occupiedRoomsCount / totalRooms) * 100) : 0
+
+            // Cập nhật selectedHostel với occupancy mới
+            setSelectedHostel(prev => ({
+                ...prev,
+                occupancy: newOccupancy
+            }))
+
+            // Cập nhật hostelList với occupancy mới
+            setHostelList(prev => prev.map(hostel =>
+                hostel.id === selectedHostel.id
+                    ? { ...hostel, occupancy: newOccupancy }
+                    : hostel
+            ))
+        }
+    }, [occupiedRoomsCount, selectedHostel?.id])
+
     const filteredTenants = tenants
         .filter((tenant) => selectedHostel && (tenant.hostel_id || tenant.hostelId) === selectedHostel.id)
         .filter((tenant) => tenant.status === 'active') // Chỉ hiển thị tenant active
@@ -52,9 +78,6 @@ export default function Dashboard() {
                 (tenant.room_number || tenant.roomNumber)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 tenant.phone.includes(searchTerm),
         )
-
-    // Tính tổng số phòng đã thuê = số khách thuê active
-    const occupiedRoomsCount = filteredTenants.length
 
 
     const generateContract = (tenant) => {
@@ -150,43 +173,10 @@ export default function Dashboard() {
             await deleteKhachThue(tenant.id)
 
             setTenants(prev => prev.filter(t => t.id !== tenant.id))
-
-            // Tính toán occupancy mới sau khi xóa tenant
-            const totalRooms = selectedHostel?.rooms || 0
-            const newOccupiedRooms = occupiedRoomsCount - 1 // -1 cho tenant bị xóa
-            const newOccupancy = totalRooms > 0 ? Math.round((newOccupiedRooms / totalRooms) * 100) : 0
-
-            // Cập nhật selectedHostel với occupancy mới
-            setSelectedHostel(prev => ({
-                ...prev,
-                occupancy: newOccupancy
-            }))
-
-            // Cập nhật hostelList với occupancy mới
-            setHostelList(prev => prev.map(hostel =>
-                hostel.id === selectedHostel?.id
-                    ? { ...hostel, occupancy: newOccupancy }
-                    : hostel
-            ))
         } catch (error) {
             console.error('Failed to delete tenant:', error)
             // Fallback to local state
             setTenants(prev => prev.filter(t => t.id !== tenant.id))
-
-            // Tính toán occupancy ngay cả khi có lỗi
-            const totalRooms = selectedHostel?.rooms || 0
-            const newOccupiedRooms = occupiedRoomsCount - 1 // -1 cho tenant bị xóa
-            const newOccupancy = totalRooms > 0 ? Math.round((newOccupiedRooms / totalRooms) * 100) : 0
-
-            setSelectedHostel(prev => ({
-                ...prev,
-                occupancy: newOccupancy
-            }))
-            setHostelList(prev => prev.map(hostel =>
-                hostel.id === selectedHostel?.id
-                    ? { ...hostel, occupancy: newOccupancy }
-                    : hostel
-            ))
         }
     }
 
@@ -438,7 +428,10 @@ export default function Dashboard() {
     const renderPage = () => {
         switch (activeTab) {
             case "overview":
-                return <OverviewPage selectedHostel={selectedHostel} occupiedRoomsCount={occupiedRoomsCount} chartData={chartData} />
+                return <OverviewPage
+                    selectedHostel={selectedHostel}
+                    occupiedRoomsCount={occupiedRoomsCount}
+                />
             case "customers":
                 return (
                     <CustomersTab
@@ -464,24 +457,6 @@ export default function Dashboard() {
 
                                 // Thêm vào state để hiển thị ngay lập tức
                                 setTenants(prev => [...prev, newTenant])
-
-                                // Tính toán occupancy mới dựa trên số phòng đã thuê
-                                const totalRooms = selectedHostel?.rooms || 0
-                                const newOccupiedRooms = occupiedRoomsCount + 1 // +1 cho tenant mới
-                                const newOccupancy = totalRooms > 0 ? Math.round((newOccupiedRooms / totalRooms) * 100) : 0
-
-                                // Cập nhật selectedHostel với occupancy mới
-                                setSelectedHostel(prev => ({
-                                    ...prev,
-                                    occupancy: newOccupancy
-                                }))
-
-                                // Cập nhật hostelList với occupancy mới
-                                setHostelList(prev => prev.map(hostel =>
-                                    hostel.id === selectedHostel?.id
-                                        ? { ...hostel, occupancy: newOccupancy }
-                                        : hostel
-                                ))
                             } catch (error) {
                                 console.error('Failed to update UI after tenant creation:', error)
                                 // Fallback to local state
