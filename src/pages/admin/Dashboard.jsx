@@ -16,13 +16,15 @@ import { Label } from "@/components/admin/ui/label"
 import { Badge } from "@/components/admin/ui/badge"
 import { Key } from "lucide-react"
 
-import { revenueData, tenantData, notifications, expenseCategories, hostels } from "@/data/dashboard-data"
+// Removed old data imports - using Supabase data instead
 import { createToaNha, deleteToaNha, listToaNha } from "@/services/toa-nha.service"
 import { updateToaNha } from "@/services/toa-nha.service"
 import { createQuanLy, updateQuanLy } from "@/services/quan-ly.service"
 import { createTaiKhoan } from "@/services/tai-khoan.service"
 import { createFixedCanHoForToaNha, countCanHoByToaNha } from "@/services/can-ho.service"
 import { listHopDongByToaNha } from "@/services/hop-dong.service"
+import { deleteKhachThue, updateKhachThue } from "@/services/khach-thue.service"
+import { deleteHopDong, updateHopDong } from "@/services/hop-dong.service"
 // Removed old dashboard tables (notifications, revenue_data, expense_categories)
 
 export default function Dashboard() {
@@ -30,15 +32,15 @@ export default function Dashboard() {
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedManager, setSelectedManager] = useState(null)
     const [hostelList, setHostelList] = useState([])
-    const [selectedHostel, setSelectedHostel] = useState(hostels[0])
+    const [selectedHostel, setSelectedHostel] = useState(null)
     const [isAddTenantOpen, setIsAddTenantOpen] = useState(false)
     const [isManagerDialogOpen, setIsManagerDialogOpen] = useState(false)
-    const [tenants, setTenants] = useState(tenantData)
+    const [tenants, setTenants] = useState([])
     const [isLoading, setIsLoading] = useState(false)
     const [chartData, setChartData] = useState({
-        revenue: revenueData,
-        expenseCategories: expenseCategories,
-        notifications: notifications,
+        revenue: [],
+        expenseCategories: [],
+        notifications: [],
     })
 
     const filteredTenants = tenants
@@ -51,6 +53,9 @@ export default function Dashboard() {
                 tenant.phone.includes(searchTerm),
         )
 
+    // Tính tổng số phòng đã thuê = số khách thuê active
+    const occupiedRoomsCount = filteredTenants.length
+
 
     const generateContract = (tenant) => {
         console.log(`Generating contract for ${tenant.name}`)
@@ -59,10 +64,52 @@ export default function Dashboard() {
 
     const editTenant = async (updatedTenant) => {
         try {
-            await updateTenant(updatedTenant.id, updatedTenant)
+            // Chuẩn bị dữ liệu cập nhật, chỉ gửi các field có giá trị để tránh lỗi constraint
+            const updateData = {
+                ho_ten: updatedTenant.name,
+                sdt: updatedTenant.phone,
+                tai_khoan_id: updatedTenant.tai_khoan_id || null
+            }
+
+            // Chỉ thêm email nếu có giá trị
+            if (updatedTenant.email && updatedTenant.email.trim()) {
+                updateData.email = updatedTenant.email.trim()
+            }
+
+            // Chỉ thêm cccd nếu có giá trị, tránh lỗi unique constraint
+            if (updatedTenant.cccd && updatedTenant.cccd.trim()) {
+                updateData.cccd = updatedTenant.cccd.trim()
+            }
+
+            // Cập nhật thông tin khách thuê trong schema mới
+            await updateKhachThue(updatedTenant.id, updateData)
+
+            // Cập nhật hợp đồng nếu có thay đổi phòng
+            if (updatedTenant.hop_dong_id && updatedTenant.room_id) {
+                await updateHopDong(updatedTenant.hop_dong_id, {
+                    can_ho_id: updatedTenant.room_id
+                })
+            }
+
+            // Cập nhật state với thông tin tài khoản mới nếu có
             setTenants(prev => prev.map(t => t.id === updatedTenant.id ? { ...t, ...updatedTenant } : t))
         } catch (error) {
             console.error('Failed to update tenant:', error)
+
+            // Xử lý lỗi cụ thể cho user
+            const errorObj = error
+            if (errorObj?.code === '23505') {
+                if (errorObj?.details?.includes('cccd')) {
+                    alert('CCCD đã tồn tại trong hệ thống. Vui lòng kiểm tra lại CCCD hoặc để trống nếu chưa có.')
+                } else if (errorObj?.details?.includes('email')) {
+                    alert('Email đã tồn tại trong hệ thống. Vui lòng kiểm tra lại email hoặc để trống nếu chưa có.')
+                } else {
+                    alert('Thông tin khách thuê đã tồn tại. Vui lòng kiểm tra lại.')
+                }
+            } else {
+                alert('Có lỗi xảy ra khi cập nhật thông tin khách thuê. Vui lòng thử lại.')
+            }
+
             // Fallback to local state
             setTenants(prev => prev.map(t => t.id === updatedTenant.id ? { ...t, ...updatedTenant } : t))
         }
@@ -96,22 +143,29 @@ export default function Dashboard() {
     const handleDeleteTenant = async (tenant) => {
         if (!confirm(`Xóa khách thuê "${tenant.name}"?`)) return
         try {
-            await deleteTenant(tenant.id)
+            // Xóa khách thuê và hợp đồng từ schema mới
+            if (tenant.hop_dong_id) {
+                await deleteHopDong(tenant.hop_dong_id)
+            }
+            await deleteKhachThue(tenant.id)
+
             setTenants(prev => prev.filter(t => t.id !== tenant.id))
 
-            // Tính toán và cập nhật occupancy tự động
-            const updatedHostel = await calculateAndUpdateHostelOccupancy(selectedHostel.id)
+            // Tính toán occupancy mới sau khi xóa tenant
+            const totalRooms = selectedHostel?.rooms || 0
+            const newOccupiedRooms = occupiedRoomsCount - 1 // -1 cho tenant bị xóa
+            const newOccupancy = totalRooms > 0 ? Math.round((newOccupiedRooms / totalRooms) * 100) : 0
 
             // Cập nhật selectedHostel với occupancy mới
             setSelectedHostel(prev => ({
                 ...prev,
-                occupancy: updatedHostel.occupancy
+                occupancy: newOccupancy
             }))
 
             // Cập nhật hostelList với occupancy mới
             setHostelList(prev => prev.map(hostel =>
-                hostel.id === selectedHostel.id
-                    ? { ...hostel, occupancy: updatedHostel.occupancy }
+                hostel.id === selectedHostel?.id
+                    ? { ...hostel, occupancy: newOccupancy }
                     : hostel
             ))
         } catch (error) {
@@ -120,14 +174,17 @@ export default function Dashboard() {
             setTenants(prev => prev.filter(t => t.id !== tenant.id))
 
             // Tính toán occupancy ngay cả khi có lỗi
-            const updatedHostel = await calculateAndUpdateHostelOccupancy(selectedHostel.id)
+            const totalRooms = selectedHostel?.rooms || 0
+            const newOccupiedRooms = occupiedRoomsCount - 1 // -1 cho tenant bị xóa
+            const newOccupancy = totalRooms > 0 ? Math.round((newOccupiedRooms / totalRooms) * 100) : 0
+
             setSelectedHostel(prev => ({
                 ...prev,
-                occupancy: updatedHostel.occupancy
+                occupancy: newOccupancy
             }))
             setHostelList(prev => prev.map(hostel =>
-                hostel.id === selectedHostel.id
-                    ? { ...hostel, occupancy: updatedHostel.occupancy }
+                hostel.id === selectedHostel?.id
+                    ? { ...hostel, occupancy: newOccupancy }
                     : hostel
             ))
         }
@@ -140,31 +197,39 @@ export default function Dashboard() {
             try {
                 // Load tòa nhà (schema mới)
                 const toaNhaData = await listToaNha()
-                const mappedHostels = await Promise.all((toaNhaData || []).map(async t => ({
-                    id: t.id,
-                    name: t.ten_toa,
-                    address: t.dia_chi,
-                    rooms: await countCanHoByToaNha(t.id),
-                    occupancy: 0,
-                    manager: t.quan_ly ? {
-                        id: t.quan_ly.id,
-                        name: t.quan_ly.ho_ten,
-                        phone: t.quan_ly.sdt,
-                        email: t.quan_ly.email,
-                        avatar: '',
-                        experience: '',
-                        username: t.quan_ly.tai_khoan?.username,
-                        role: t.quan_ly.tai_khoan?.role,
-                        password: t.quan_ly.tai_khoan?.password,
-                    } : {
-                        id: null,
-                        name: 'Chưa có quản lý',
-                        phone: '',
-                        email: '',
-                        avatar: '',
-                        experience: ''
+                const mappedHostels = await Promise.all((toaNhaData || []).map(async t => {
+                    const totalRooms = await countCanHoByToaNha(t.id)
+                    // Tính số khách thuê active cho tòa nhà này
+                    const contracts = await listHopDongByToaNha(t.id)
+                    const activeTenantsCount = (contracts || []).filter(h => h.trang_thai === 'hieu_luc').length
+                    const occupancy = totalRooms > 0 ? Math.round((activeTenantsCount / totalRooms) * 100) : 0
+
+                    return {
+                        id: t.id,
+                        name: t.ten_toa,
+                        address: t.dia_chi,
+                        rooms: totalRooms,
+                        occupancy: occupancy,
+                        manager: t.quan_ly ? {
+                            id: t.quan_ly.id,
+                            name: t.quan_ly.ho_ten,
+                            phone: t.quan_ly.sdt,
+                            email: t.quan_ly.email,
+                            avatar: '',
+                            experience: '',
+                            username: t.quan_ly.tai_khoan?.username,
+                            role: t.quan_ly.tai_khoan?.role,
+                            password: t.quan_ly.tai_khoan?.password,
+                        } : {
+                            id: null,
+                            name: 'Chưa có quản lý',
+                            phone: '',
+                            email: '',
+                            avatar: '',
+                            experience: ''
+                        }
                     }
-                })))
+                }))
                 if (mappedHostels.length) {
                     setHostelList(mappedHostels)
                     setSelectedHostel(mappedHostels[0])
@@ -211,24 +276,46 @@ export default function Dashboard() {
         const loadTenantsForHostel = async () => {
             if (!selectedHostel?.id) return
 
-            console.log('Loading tenants for hostel (toa_nha):', selectedHostel.id, selectedHostel.name)
+            console.log('Loading tenants for hostel (toa_nha):', selectedHostel?.id, selectedHostel?.name)
 
             try {
-                const contracts = await listHopDongByToaNha(selectedHostel.id)
+                const contracts = await listHopDongByToaNha(selectedHostel?.id)
+                console.log('Contracts with account data:', contracts)
                 const mapped = (contracts || [])
                     .filter(h => h.trang_thai === 'hieu_luc')
-                    .map(h => ({
-                        id: h.khach_thue?.id,
-                        name: h.khach_thue?.ho_ten,
-                        phone: h.khach_thue?.sdt,
-                        room_number: h.can_ho?.so_can,
-                        status: 'active',
-                        hostel_id: h.can_ho?.toa_nha_id,
-                        months_rented: undefined,
-                        emergency_phone: undefined,
-                        rent_amount: h.can_ho?.gia_thue,
-                        room_id: h.can_ho?.id,
-                    }))
+                    .map(h => {
+                        // Tính số tháng thuê dựa trên ngày bắt đầu và kết thúc
+                        const startDate = new Date(h.ngay_bat_dau)
+                        const endDate = new Date(h.ngay_ket_thuc)
+                        const monthsRented = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24 * 30))
+
+                        const tenantData = {
+                            id: h.khach_thue?.id,
+                            name: h.khach_thue?.ho_ten,
+                            phone: h.khach_thue?.sdt,
+                            email: h.khach_thue?.email,
+                            cccd: h.khach_thue?.cccd,
+                            room_number: h.can_ho?.so_can,
+                            status: 'active',
+                            hostel_id: h.can_ho?.toa_nha_id,
+                            months_rented: monthsRented,
+                            emergency_phone: undefined,
+                            rent_amount: h.can_ho?.gia_thue,
+                            room_id: h.can_ho?.id,
+                            hop_dong_id: h.id,
+                            contract_start: h.ngay_bat_dau,
+                            contract_end: h.ngay_ket_thuc,
+                            tai_khoan_id: h.khach_thue?.tai_khoan_id,
+                            tai_khoan: h.khach_thue?.tai_khoan,
+                        }
+
+                        // Debug log để kiểm tra thông tin tài khoản
+                        if (h.khach_thue?.tai_khoan) {
+                            console.log(`Tenant ${h.khach_thue?.ho_ten} has account:`, h.khach_thue.tai_khoan)
+                        }
+
+                        return tenantData
+                    })
                 setTenants(mapped)
             } catch (error) {
                 console.error('Failed to load tenants for hostel:', error)
@@ -254,8 +341,8 @@ export default function Dashboard() {
                 if (!selectedHostel) break
 
                 try {
-                    let managerId = selectedHostel.manager?.id || null
-                    let taiKhoanId = selectedHostel.manager?.tai_khoan_id || null
+                    let managerId = selectedHostel?.manager?.id || null
+                    let taiKhoanId = selectedHostel?.manager?.tai_khoan_id || null
                     // Tạo mới hoặc cập nhật bảng quan_ly
                     if (managerId) {
                         await updateQuanLy(managerId, {
@@ -285,14 +372,14 @@ export default function Dashboard() {
 
                     // Gán quản lý vào tòa nhà
                     if (managerId) {
-                        await updateToaNha(selectedHostel.id, { quan_ly_id: managerId })
+                        await updateToaNha(selectedHostel?.id, { quan_ly_id: managerId })
                     }
                 } catch (error) {
                     console.error('Failed to persist manager to quan_ly/toa_nha:', error)
                 }
 
                 // Cập nhật local state
-                const updatedHostel = { ...selectedHostel, manager: { ...selectedHostel.manager, ...manager } }
+                const updatedHostel = { ...selectedHostel, manager: { ...selectedHostel?.manager, ...manager } }
                 setSelectedHostel(updatedHostel)
                 setHostelList(prev => prev.map(h => h.id === updatedHostel.id ? updatedHostel : h))
                 break
@@ -301,7 +388,7 @@ export default function Dashboard() {
                 if (!selectedHostel) break
                 try {
                     // Nếu đã có tài khoản thì không cấp mới
-                    if (selectedHostel.manager?.username) {
+                    if (selectedHostel?.manager?.username) {
                         alert('Quản lý đã có tài khoản, không cần cấp mới')
                         break
                     }
@@ -314,7 +401,7 @@ export default function Dashboard() {
                     })
 
                     // Cập nhật quan_ly.tai_khoan_id nếu đã có quản lý
-                    if (selectedHostel.manager?.id) {
+                    if (selectedHostel?.manager?.id) {
                         await updateQuanLy(selectedHostel.manager.id, { tai_khoan_id: account.id })
                     }
 
@@ -322,7 +409,7 @@ export default function Dashboard() {
                     const updatedHostel = {
                         ...selectedHostel,
                         manager: {
-                            ...selectedHostel.manager,
+                            ...selectedHostel?.manager,
                             username: account.username,
                             role: account.role,
                             // Lưu tạm mật khẩu để có thể hiển thị theo nút toggle
@@ -351,7 +438,7 @@ export default function Dashboard() {
     const renderPage = () => {
         switch (activeTab) {
             case "overview":
-                return <OverviewPage selectedHostel={selectedHostel} chartData={chartData} />
+                return <OverviewPage selectedHostel={selectedHostel} occupiedRoomsCount={occupiedRoomsCount} chartData={chartData} />
             case "customers":
                 return (
                     <CustomersTab
@@ -361,49 +448,53 @@ export default function Dashboard() {
                         selectedHostel={selectedHostel}
                         onAddTenant={async (payload) => {
                             try {
+                                // Tạo tenant object từ payload (đã được xử lý trong customers-tab)
                                 const newTenant = {
+                                    id: payload.khachThueId, // Sử dụng ID từ khach_thue
                                     name: payload.name,
                                     room_number: payload.roomNumber,
                                     phone: payload.phone,
-                                    emergency_phone: payload.emergencyPhone,
                                     months_rented: Number(payload.rentMonths || 0),
                                     rent_amount: payload.rentAmount,
                                     room_id: payload.roomId,
                                     status: "active",
-                                    hostel_id: selectedHostel.id,
+                                    hostel_id: selectedHostel?.id,
+                                    hop_dong_id: payload.hopDongId, // ID của hợp đồng
                                 }
-                                const created = await createTenant(newTenant)
-                                setTenants(prev => [...prev, created])
 
-                                // Tính toán và cập nhật occupancy tự động
-                                const updatedHostel = await calculateAndUpdateHostelOccupancy(selectedHostel.id)
+                                // Thêm vào state để hiển thị ngay lập tức
+                                setTenants(prev => [...prev, newTenant])
+
+                                // Tính toán occupancy mới dựa trên số phòng đã thuê
+                                const totalRooms = selectedHostel?.rooms || 0
+                                const newOccupiedRooms = occupiedRoomsCount + 1 // +1 cho tenant mới
+                                const newOccupancy = totalRooms > 0 ? Math.round((newOccupiedRooms / totalRooms) * 100) : 0
 
                                 // Cập nhật selectedHostel với occupancy mới
                                 setSelectedHostel(prev => ({
                                     ...prev,
-                                    occupancy: updatedHostel.occupancy
+                                    occupancy: newOccupancy
                                 }))
 
                                 // Cập nhật hostelList với occupancy mới
                                 setHostelList(prev => prev.map(hostel =>
-                                    hostel.id === selectedHostel.id
-                                        ? { ...hostel, occupancy: updatedHostel.occupancy }
+                                    hostel.id === selectedHostel?.id
+                                        ? { ...hostel, occupancy: newOccupancy }
                                         : hostel
                                 ))
                             } catch (error) {
-                                console.error('Failed to create tenant:', error)
+                                console.error('Failed to update UI after tenant creation:', error)
                                 // Fallback to local state
                                 const nextId = tenants.length ? Math.max(...tenants.map(t => t.id)) + 1 : 1
                                 const newTenant = {
                                     id: nextId,
                                     name: payload.name,
                                     roomNumber: payload.roomNumber,
-                                    address: payload.address, // Chỉ lưu local cho fallback
+                                    address: payload.address,
                                     phone: payload.phone,
-                                    emergencyPhone: payload.emergencyPhone,
                                     rentMonths: Number(payload.rentMonths || 0),
                                     status: "active",
-                                    hostelId: selectedHostel.id,
+                                    hostelId: selectedHostel?.id,
                                 }
                                 setTenants(prev => [...prev, newTenant])
                             }
@@ -489,7 +580,7 @@ export default function Dashboard() {
                                     name: created.ten_toa,
                                     address: created.dia_chi,
                                     rooms: roomsCount,
-                                    occupancy: 0,
+                                    occupancy: 0, // Tòa nhà mới chưa có khách thuê
                                     manager: {
                                         id: created.quan_ly_id || null,
                                         name: 'Chưa có quản lý',
@@ -529,7 +620,12 @@ export default function Dashboard() {
             />
 
             <div className="flex h-[calc(100vh-64px)]">
-                <DashboardSidebar activeTab={activeTab} selectedHostel={selectedHostel} onTabChange={setActiveTab} />
+                <DashboardSidebar
+                    activeTab={activeTab}
+                    selectedHostel={selectedHostel}
+                    occupiedRoomsCount={occupiedRoomsCount}
+                    onTabChange={setActiveTab}
+                />
 
                 <main className="flex-1 overflow-auto bg-white">
                     <div className="p-6 lg:p-8">

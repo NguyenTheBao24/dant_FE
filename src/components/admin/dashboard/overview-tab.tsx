@@ -6,10 +6,11 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 interface OverviewTabProps {
     selectedHostel: any
+    occupiedRoomsCount: number
     chartData: any[]
 }
 
-export function OverviewTab({ selectedHostel, chartData }: OverviewTabProps) {
+export function OverviewTab({ selectedHostel, occupiedRoomsCount, chartData }: OverviewTabProps) {
     return (
         <div className="space-y-8">
             <div className="flex items-center justify-between">
@@ -17,7 +18,7 @@ export function OverviewTab({ selectedHostel, chartData }: OverviewTabProps) {
                     <h2 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent dark:from-white dark:to-slate-300">
                         Tổng quan
                     </h2>
-                    <p className="text-slate-600 dark:text-slate-400 mt-1 text-lg">{selectedHostel.name}</p>
+                    <p className="text-slate-600 dark:text-slate-400 mt-1 text-lg">{selectedHostel?.name || 'Chưa chọn tòa nhà'}</p>
                 </div>
                 <div className="flex items-center space-x-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-lg border border-slate-200">
                     <Calendar className="h-4 w-4 text-primary" />
@@ -42,15 +43,15 @@ export function OverviewTab({ selectedHostel, chartData }: OverviewTabProps) {
 
                 <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 hover:shadow-xl transition-all duration-300">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-semibold text-blue-800 dark:text-blue-200">Khách thuê</CardTitle>
+                        <CardTitle className="text-sm font-semibold text-blue-800 dark:text-blue-200">Phòng đã thuê</CardTitle>
                         <div className="p-2 bg-blue-100 rounded-lg dark:bg-blue-800/30">
                             <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{selectedHostel.occupancy}</div>
+                        <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{occupiedRoomsCount}</div>
                         <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                            +{selectedHostel.occupancy - 180} khách mới tháng này
+                            / {selectedHostel?.rooms || 0} phòng tổng cộng
                         </p>
                     </CardContent>
                 </Card>
@@ -64,9 +65,11 @@ export function OverviewTab({ selectedHostel, chartData }: OverviewTabProps) {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                            {Math.round((selectedHostel.occupancy / selectedHostel.rooms) * 100)}%
+                            {selectedHostel?.rooms ? Math.round((occupiedRoomsCount / selectedHostel.rooms) * 100) : 0}%
                         </div>
-                        <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">+5% so với tháng trước</p>
+                        <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">
+                            {occupiedRoomsCount} phòng đã thuê / {selectedHostel?.rooms || 0} phòng
+                        </p>
                     </CardContent>
                 </Card>
 

@@ -19,7 +19,7 @@ export async function listHopDongByToaNha(toaNhaId) {
     if (!isReady()) return []
     const { data, error } = await supabase
         .from('hop_dong')
-        .select('*, can_ho:can_ho_id(id, so_can, toa_nha_id, gia_thue), khach_thue:khach_thue_id(id, ho_ten, sdt, email)')
+        .select('*, can_ho:can_ho_id(id, so_can, toa_nha_id, gia_thue), khach_thue:khach_thue_id(id, ho_ten, sdt, email, cccd, tai_khoan_id, tai_khoan:tai_khoan_id(id, username, password, role, created_at))')
         .eq('can_ho.toa_nha_id', toaNhaId)
         .order('ngay_bat_dau', { ascending: false })
     if (error) throw error

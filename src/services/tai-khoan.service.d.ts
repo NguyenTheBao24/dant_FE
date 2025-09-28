@@ -3,6 +3,8 @@ export interface TaiKhoanRow {
     username: string
     password: string
     role: string
+    created_at?: string
+    is_active?: boolean
 }
 
 export function listTaiKhoan(): Promise<TaiKhoanRow[]>

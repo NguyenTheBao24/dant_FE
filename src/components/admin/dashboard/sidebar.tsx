@@ -7,10 +7,11 @@ import { Card, CardContent } from "@/components/admin/ui/card"
 interface SidebarProps {
     activeTab: string
     selectedHostel: any
+    occupiedRoomsCount: number
     onTabChange: (tab: string) => void
 }
 
-export function DashboardSidebar({ activeTab, selectedHostel, onTabChange }: SidebarProps) {
+export function DashboardSidebar({ activeTab, selectedHostel, occupiedRoomsCount, onTabChange }: SidebarProps) {
     return (
 
         console.log("selectedHostel", selectedHostel),
@@ -22,23 +23,23 @@ export function DashboardSidebar({ activeTab, selectedHostel, onTabChange }: Sid
                             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg">
                                 <Building2 className="h-8 w-8 text-white" />
                             </div>
-                            <h3 className="font-bold text-xl text-gray-900 mb-2">{selectedHostel.name}</h3>
-                            <p className="text-sm text-gray-600 mb-4 leading-relaxed">{selectedHostel.address}</p>
+                            <h3 className="font-bold text-xl text-gray-900 mb-2">{selectedHostel?.name || 'Chưa chọn tòa nhà'}</h3>
+                            <p className="text-sm text-gray-600 mb-4 leading-relaxed">{selectedHostel?.address || ''}</p>
 
                             <div className="grid grid-cols-2 gap-4 mb-4">
                                 <div className="bg-white rounded-xl p-3 border border-gray-200">
-                                    <div className="font-bold text-lg text-gray-900">{selectedHostel.rooms}</div>
+                                    <div className="font-bold text-lg text-gray-900">{selectedHostel?.rooms || 0}</div>
                                     <div className="text-xs text-gray-600 font-medium">Tổng phòng</div>
                                 </div>
                                 <div className="bg-blue-100 rounded-xl p-3 border border-blue-200">
-                                    <div className="font-bold text-lg text-blue-700">{selectedHostel.occupancy}</div>
+                                    <div className="font-bold text-lg text-blue-700">{occupiedRoomsCount}</div>
                                     <div className="text-xs text-blue-600 font-medium">Đã thuê</div>
                                 </div>
                             </div>
 
                             <div className="bg-gray-50 rounded-xl p-3 border border-gray-200">
                                 <div className="text-xs text-gray-500 mb-1 font-medium">Quản lý</div>
-                                <div className="font-semibold text-gray-900">{selectedHostel.manager.name}</div>
+                                <div className="font-semibold text-gray-900">{selectedHostel?.manager?.name || 'Chưa có quản lý'}</div>
                             </div>
                         </div>
                     </CardContent>

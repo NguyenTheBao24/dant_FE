@@ -46,7 +46,7 @@ export function OverviewPage({ selectedHostel, chartData }: OverviewPageProps) {
                     <h2 className="text-3xl font-bold tracking-tight text-blue-600">
                         Tổng quan
                     </h2>
-                    <p className="text-gray-600">Thống kê tổng quan khu trọ {selectedHostel.name}</p>
+                    <p className="text-gray-600">Thống kê tổng quan khu trọ {selectedHostel?.name || 'Chưa chọn tòa nhà'}</p>
                 </div>
             </div>
 
@@ -67,7 +67,7 @@ export function OverviewPage({ selectedHostel, chartData }: OverviewPageProps) {
                 />
                 <StatsCard
                     title="Tỷ lệ lấp đầy"
-                    value={`${Math.round((selectedHostel.occupancy / selectedHostel.rooms) * 100)}%`}
+                    value={`${selectedHostel?.rooms ? Math.round(((selectedHostel?.occupancy || 0) / selectedHostel.rooms) * 100) : 0}%`}
                     change="+5% so với tháng trước"
                     icon={Building2}
                     gradient="bg-gradient-to-br from-purple-100 to-purple-200"

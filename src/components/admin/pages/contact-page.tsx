@@ -142,10 +142,10 @@ export function ContactPage({ selectedHostel, onManagerAction }: ContactPageProp
                 email: newManager.email,
             })
             if (created) {
-                await updateToaNha(selectedHostel.id, { quan_ly_id: created.id })
+                await updateToaNha(selectedHostel?.id, { quan_ly_id: created.id })
                 const createdWithBuilding = {
                     ...created,
-                    toa_nha: [{ id: selectedHostel.id, ten_toa: selectedHostel.name }],
+                    toa_nha: [{ id: selectedHostel?.id, ten_toa: selectedHostel?.name }],
                 }
                 setManagers(prev => [...prev, createdWithBuilding])
                 // Cập nhật ngay góc quản lý và selectedHostel ở Dashboard thông qua callback
