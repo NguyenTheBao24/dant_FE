@@ -7,7 +7,7 @@ import { Input } from "@/components/admin/ui/input"
 import { Label } from "@/components/admin/ui/label"
 import { Textarea } from "@/components/admin/ui/textarea"
 import { Plus } from "lucide-react"
-import { listAvailableCanHoByToaNha, updateCanHoTrangThai } from "@/services/can-ho.service"
+import { listAvailableCanHoByToaNha, updateCanHoTrangThai, determineRoomType } from "@/services/can-ho.service"
 import { createKhachThue } from "@/services/khach-thue.service"
 import { createHopDong } from "@/services/hop-dong.service"
 
@@ -46,7 +46,7 @@ export function AddTenantDialog({
                 const mappedRooms = rooms.map((room: any) => ({
                     id: room.id,
                     room_number: room.so_can,
-                    room_type: room.loai_can_ho || 'Phòng đơn',
+                    room_type: determineRoomType(room.dien_tich, room.gia_thue),
                     rent_amount: room.gia_thue,
                     status: room.trang_thai === 'trong' ? 'available' : 'occupied',
                     hostel_id: room.toa_nha_id

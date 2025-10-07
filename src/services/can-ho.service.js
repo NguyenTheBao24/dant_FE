@@ -76,26 +76,111 @@ export async function deleteCanHo(id) {
     return { id }
 }
 
-// Tạo danh sách căn hộ cố định cho một tòa nhà
-export async function createFixedCanHoForToaNha(toaNhaId, total = 10) {
+// Tạo danh sách căn hộ cố định cho một tòa nhà với nhiều loại phòng
+export async function createFixedCanHoForToaNha(toaNhaId, total = 10, customRoomTypes = null) {
     if (!isReady()) return []
     const items = []
-    const defaultAreas = [20, 25, 30]
-    const defaultPrices = [2500000, 3500000, 4500000]
-    for (let i = 1; i <= total; i++) {
-        const soCan = `A${String(i).padStart(3, '0')}`
-        const idx = (i - 1) % 3
+
+    // Định nghĩa các loại phòng khác nhau (có thể tùy chỉnh)
+    const defaultRoomTypes = [
+        {
+            loai: 'Phòng đơn',
+            dien_tich: 20,
+            gia_thue: 2500000,
+            ty_le: 0.5 // 50% phòng đơn
+        },
+        {
+            loai: 'Phòng đôi',
+            dien_tich: 35,
+            gia_thue: 4500000,
+            ty_le: 0.3 // 30% phòng đôi
+        },
+        {
+            loai: 'Phòng VIP',
+            dien_tich: 50,
+            gia_thue: 7000000,
+            ty_le: 0.2 // 20% phòng VIP
+        }
+    ]
+
+    const roomTypes = customRoomTypes || defaultRoomTypes
+
+    // Tính số lượng từng loại phòng
+    const singleRooms = Math.floor(total * roomTypes[0].ty_le)
+    const doubleRooms = Math.floor(total * roomTypes[1].ty_le)
+    const vipRooms = total - singleRooms - doubleRooms // Phần còn lại
+
+    console.log(`Creating rooms for building ${toaNhaId}: ${singleRooms} single, ${doubleRooms} double, ${vipRooms} VIP`)
+
+    let roomIndex = 1
+
+    // Tạo phòng đơn
+    for (let i = 0; i < singleRooms; i++) {
+        const soCan = `A${String(roomIndex).padStart(3, '0')}`
         items.push({
             so_can: soCan,
-            dien_tich: defaultAreas[idx],
+            dien_tich: roomTypes[0].dien_tich,
             trang_thai: 'trong',
             toa_nha_id: toaNhaId,
-            gia_thue: defaultPrices[idx],
+            gia_thue: roomTypes[0].gia_thue
+            // loai_can_ho: roomTypes[0].loai // Tạm thời comment vì database chưa có cột này
         })
+        roomIndex++
     }
+
+    // Tạo phòng đôi
+    for (let i = 0; i < doubleRooms; i++) {
+        const soCan = `A${String(roomIndex).padStart(3, '0')}`
+        items.push({
+            so_can: soCan,
+            dien_tich: roomTypes[1].dien_tich,
+            trang_thai: 'trong',
+            toa_nha_id: toaNhaId,
+            gia_thue: roomTypes[1].gia_thue
+            // loai_can_ho: roomTypes[1].loai // Tạm thời comment vì database chưa có cột này
+        })
+        roomIndex++
+    }
+
+    // Tạo phòng VIP
+    for (let i = 0; i < vipRooms; i++) {
+        const soCan = `A${String(roomIndex).padStart(3, '0')}`
+        items.push({
+            so_can: soCan,
+            dien_tich: roomTypes[2].dien_tich,
+            trang_thai: 'trong',
+            toa_nha_id: toaNhaId,
+            gia_thue: roomTypes[2].gia_thue
+            // loai_can_ho: roomTypes[2].loai // Tạm thời comment vì database chưa có cột này
+        })
+        roomIndex++
+    }
+
+    console.log(`Total rooms to create: ${items.length}`)
     const { data, error } = await supabase.from('can_ho').insert(items).select()
     if (error) throw error
     return data || []
+}
+
+// Function helper để tạo phòng với tỷ lệ tùy chỉnh
+// Function helper để xác định loại phòng dựa trên diện tích và giá thuê
+export function determineRoomType(dien_tich, gia_thue) {
+    if ((dien_tich || 0) >= 45 || (gia_thue || 0) >= 6000000) {
+        return 'Phòng VIP'
+    } else if ((dien_tich || 0) >= 30 || (gia_thue || 0) >= 4000000) {
+        return 'Phòng đôi'
+    }
+    return 'Phòng đơn'
+}
+
+export async function createRoomsWithCustomRatio(toaNhaId, total, roomConfig) {
+    const roomTypes = roomConfig || [
+        { loai: 'Phòng đơn', dien_tich: 20, gia_thue: 2500000, ty_le: 0.5 },
+        { loai: 'Phòng đôi', dien_tich: 35, gia_thue: 4500000, ty_le: 0.3 },
+        { loai: 'Phòng VIP', dien_tich: 50, gia_thue: 7000000, ty_le: 0.2 }
+    ]
+
+    return await createFixedCanHoForToaNha(toaNhaId, total, roomTypes)
 }
 
 

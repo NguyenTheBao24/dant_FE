@@ -11,6 +11,9 @@ interface OverviewTabProps {
 }
 
 export function OverviewTab({ selectedHostel, occupiedRoomsCount, chartData }: OverviewTabProps) {
+    // Đảm bảo dữ liệu được cập nhật khi selectedHostel thay đổi
+    const displayOccupiedRooms = selectedHostel ? occupiedRoomsCount : 0
+    const displayTotalRooms = selectedHostel?.rooms || 0
     return (
         <div className="space-y-8">
             <div className="flex items-center justify-between">
@@ -49,9 +52,9 @@ export function OverviewTab({ selectedHostel, occupiedRoomsCount, chartData }: O
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{occupiedRoomsCount}</div>
+                        <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{displayOccupiedRooms}</div>
                         <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                            / {selectedHostel?.rooms || 0} phòng tổng cộng
+                            / {displayTotalRooms} phòng tổng cộng
                         </p>
                     </CardContent>
                 </Card>
@@ -65,10 +68,10 @@ export function OverviewTab({ selectedHostel, occupiedRoomsCount, chartData }: O
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                            {selectedHostel?.rooms ? Math.round((occupiedRoomsCount / selectedHostel.rooms) * 100) : 0}%
+                            {displayTotalRooms > 0 ? Math.round((displayOccupiedRooms / displayTotalRooms) * 100) : 0}%
                         </div>
                         <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">
-                            {occupiedRoomsCount} phòng đã thuê / {selectedHostel?.rooms || 0} phòng
+                            {displayOccupiedRooms} phòng đã thuê / {displayTotalRooms} phòng
                         </p>
                     </CardContent>
                 </Card>

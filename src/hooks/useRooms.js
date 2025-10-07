@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { listAvailableCanHoByToaNha } from '@/services/can-ho.service'
+import { listAvailableCanHoByToaNha, determineRoomType } from '@/services/can-ho.service'
 
 export function useRooms(selectedHostel) {
     const [availableRooms, setAvailableRooms] = useState([])
@@ -19,7 +19,7 @@ export function useRooms(selectedHostel) {
                 const mappedRooms = rooms.map((room) => ({
                     id: room.id,
                     room_number: room.so_can,
-                    room_type: room.loai_can_ho || 'Phòng đơn',
+                    room_type: determineRoomType(room.dien_tich, room.gia_thue),
                     rent_amount: room.gia_thue,
                     status: room.trang_thai === 'trong' ? 'available' : 'occupied',
                     hostel_id: room.toa_nha_id

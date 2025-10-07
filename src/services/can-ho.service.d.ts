@@ -17,3 +17,4 @@ export function updateCanHo(id: number, updates: Partial<CanHoRow>): Promise<Can
 export function updateCanHoTrangThai(id: number, trang_thai: 'trong' | 'da_thue'): Promise<CanHoRow | null>
 export function deleteCanHo(id: number): Promise<{ id: number }>
 export function createFixedCanHoForToaNha(toaNhaId: number, total?: number): Promise<CanHoRow[]>
+export function determineRoomType(dien_tich?: number, gia_thue?: number): string

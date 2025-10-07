@@ -5,16 +5,9 @@ import { DashboardHeader } from "@/components/admin/dashboard/header"
 import { DashboardSidebar } from "@/components/admin/dashboard/sidebar"
 import { CustomersTab } from "@/components/admin/dashboard/customers-tab"
 import { OverviewPage } from "@/components/admin/pages/overview-page"
-import { AnalyticsPage } from "@/components/admin/pages/analytics-page"
 import { ContactPage } from "@/components/admin/pages/contact-page"
 import { NotificationsPage } from "@/components/admin/pages/notifications-page"
 import { AddHostelPage } from "@/components/admin/pages/add-hostel-page"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog"
-import { Button } from "@/components/admin/ui/button"
-import { Input } from "@/components/admin/ui/input"
-import { Label } from "@/components/admin/ui/label"
-import { Badge } from "@/components/admin/ui/badge"
-import { Key } from "lucide-react"
 
 // Removed old data imports - using Supabase data instead
 import { createToaNha, deleteToaNha, listToaNha } from "@/services/toa-nha.service"
@@ -43,10 +36,12 @@ export default function Dashboard() {
         notifications: [],
     })
 
-    // Tính tổng số phòng đã thuê = số khách thuê active của tòa nhà (không bị ảnh hưởng bởi tìm kiếm)
-    const occupiedRoomsCount = tenants
-        .filter((tenant) => selectedHostel && (tenant.hostel_id || tenant.hostelId) === selectedHostel.id)
-        .filter((tenant) => tenant.status === 'active').length
+    // Tính tổng số phòng đã thuê = số khách thuê active của tòa nhà hiện tại
+    const occupiedRoomsCount = selectedHostel
+        ? tenants
+            .filter((tenant) => (tenant.hostel_id || tenant.hostelId) === selectedHostel.id)
+            .filter((tenant) => tenant.status === 'active').length
+        : 0
 
     // Tự động cập nhật occupancy khi tenants thay đổi
     useEffect(() => {
@@ -431,6 +426,7 @@ export default function Dashboard() {
                 return <OverviewPage
                     selectedHostel={selectedHostel}
                     occupiedRoomsCount={occupiedRoomsCount}
+                    chartData={chartData}
                 />
             case "customers":
                 return (

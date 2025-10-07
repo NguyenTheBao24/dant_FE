@@ -5,16 +5,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/admin/ui/badge"
 import {
     XAxis, YAxis, CartesianGrid, Tooltip,
-    PieChart, Pie, Cell, AreaChart, Area,
-    ResponsiveContainer, Legend
+    PieChart, Pie, Cell, BarChart, Bar,
+    ResponsiveContainer
 } from "recharts"
 import {
     DollarSign, Users, TrendingUp, Building2, Calendar, Home,
     MapPin, Phone, Mail, User
 } from "lucide-react"
 import { useState, useEffect } from "react"
-import { listCanHoByToaNha } from "@/services/can-ho.service"
-import { listKhachThue } from "@/services/khach-thue.service"
+import { listCanHoByToaNha, determineRoomType } from "@/services/can-ho.service"
 import { listHopDongByToaNha } from "@/services/hop-dong.service"
 
 interface RoomRevenue {
@@ -62,6 +61,7 @@ interface RoomStats {
 interface OverviewPageProps {
     selectedHostel: any
     occupiedRoomsCount: number
+    chartData?: any
 }
 
 export function OverviewPage({ selectedHostel, occupiedRoomsCount }: OverviewPageProps) {
@@ -96,26 +96,26 @@ export function OverviewPage({ selectedHostel, occupiedRoomsCount }: OverviewPag
             setIsLoading(true)
             try {
                 // Load tất cả dữ liệu cần thiết
-                const [canHoData, khachThueData, hostelContracts] = await Promise.all([
+                const [canHoData, hostelContracts] = await Promise.all([
                     listCanHoByToaNha(selectedHostel.id),
-                    listKhachThue(),
                     listHopDongByToaNha(selectedHostel.id)
                 ])
 
                 // Lọc dữ liệu theo tòa nhà được chọn
                 const hostelCanHo = canHoData
 
-                // Lấy danh sách khách thuê thông qua hợp đồng
-                const hostelTenantIds = [...new Set(hostelContracts.map((contract: any) => contract.khach_thue_id))]
-                const hostelTenants = khachThueData.filter((tenant: any) =>
-                    hostelTenantIds.includes(tenant.id)
-                )
+                // Lấy danh sách khách thuê từ hợp đồng (đã có sẵn trong hostelContracts)
+                const hostelTenants = hostelContracts
+                    .filter((contract: any) => contract.khach_thue)
+                    .map((contract: any) => contract.khach_thue)
 
-                // Tính toán thống kê phòng - sử dụng logic giống Dashboard
-                const activeContractsCount = hostelContracts.filter((contract: any) => contract.trang_thai === 'hieu_luc').length
+                console.log('Hostel contracts:', hostelContracts.length)
+                console.log('Hostel tenants from contracts:', hostelTenants.length)
+
+                // Tính toán thống kê phòng - sử dụng occupiedRoomsCount từ Dashboard (giống sidebar)
                 const totalRooms = hostelCanHo.length
                 const maintenanceRooms = hostelCanHo.filter((room: any) => room.trang_thai === 'sua_chua').length
-                const occupiedRooms = activeContractsCount
+                const occupiedRooms = occupiedRoomsCount // Sử dụng giá trị từ Dashboard
                 const availableRooms = totalRooms - occupiedRooms - maintenanceRooms
 
                 const roomStatsData = {
@@ -128,34 +128,45 @@ export function OverviewPage({ selectedHostel, occupiedRoomsCount }: OverviewPag
                 }
                 setRoomStats(roomStatsData)
 
-                // Tính toán thống kê khách thuê
-                const activeTenants = hostelTenants.filter((tenant: any) => {
-                    // Kiểm tra tenant có hợp đồng hiệu lực không
-                    const activeContract = hostelContracts.find((contract: any) =>
-                        contract.khach_thue_id === tenant.id && contract.trang_thai === 'hieu_luc'
-                    )
-                    return activeContract
-                })
+                // Tính toán thống kê khách thuê - sử dụng occupiedRoomsCount từ Dashboard
+                const activeTenantsCount = occupiedRoomsCount // Sử dụng giá trị từ Dashboard
+
+                // Tính toán tài khoản dựa trên số khách thuê thực tế (occupiedRoomsCount)
+                const tenantsWithAccount = hostelTenants.filter((tenant: any) => tenant.tai_khoan_id).length
+                const tenantsWithoutAccount = Math.max(0, occupiedRoomsCount - tenantsWithAccount)
+
+                console.log('Tenants with account:', tenantsWithAccount)
+                console.log('Tenants without account:', tenantsWithoutAccount)
 
                 const tenantStatsData = {
-                    total: hostelTenants.length,
-                    active: activeTenants.length,
-                    inactive: hostelTenants.length - activeTenants.length,
-                    withAccount: hostelTenants.filter((tenant: any) => tenant.tai_khoan_id).length,
-                    withoutAccount: hostelTenants.filter((tenant: any) => !tenant.tai_khoan_id).length
+                    total: occupiedRoomsCount, // Sử dụng occupiedRoomsCount làm tổng khách thuê
+                    active: activeTenantsCount,
+                    inactive: Math.max(0, occupiedRoomsCount - activeTenantsCount), // Đảm bảo không âm
+                    withAccount: Math.min(tenantsWithAccount, occupiedRoomsCount), // Giới hạn theo occupiedRoomsCount
+                    withoutAccount: tenantsWithoutAccount
                 }
                 setTenantStats(tenantStatsData)
 
-                // Tính toán doanh thu theo phòng
+                // Tính toán doanh thu theo phòng - đảm bảo hiển thị đúng số phòng đã thuê
                 const roomRevenueData: RoomRevenue[] = []
                 let totalRevenue = 0
 
-                // Chỉ tính doanh thu từ các hợp đồng hiệu lực
+                // Lấy tất cả hợp đồng hiệu lực (không giới hạn slice)
                 const activeContracts = hostelContracts.filter((contract: any) => contract.trang_thai === 'hieu_luc')
 
-                activeContracts.forEach((contract: any) => {
-                    const tenant = contract.khach_thue || hostelTenants.find((t: any) => t.id === contract.khach_thue_id)
-                    const room = contract.can_ho || hostelCanHo.find((r: any) => r.id === contract.can_ho_id)
+                console.log('Total active contracts:', activeContracts.length)
+                console.log('Occupied rooms count:', occupiedRoomsCount)
+
+                activeContracts.forEach((contract: any, index: any) => {
+                    const tenant = contract.khach_thue
+                    const room = contract.can_ho
+
+                    console.log(`Contract ${index + 1}:`, {
+                        tenant: tenant?.ho_ten,
+                        room: room?.so_can,
+                        hasTenant: !!tenant,
+                        hasRoom: !!room
+                    })
 
                     if (tenant && room) {
                         const monthlyRent = room.gia_thue || 0
@@ -168,9 +179,12 @@ export function OverviewPage({ selectedHostel, occupiedRoomsCount }: OverviewPag
                         const totalRoomRevenue = monthlyRent * monthsRented
                         totalRevenue += monthlyRent // Chỉ tính doanh thu tháng hiện tại
 
+                        // Xác định loại phòng dựa trên diện tích và giá thuê
+                        const roomType = determineRoomType(room.dien_tich, monthlyRent)
+
                         roomRevenueData.push({
                             roomNumber: room.so_can || `P${room.id}`,
-                            roomType: room.loai_can_ho || 'Phòng đơn',
+                            roomType: roomType,
                             tenantName: tenant.ho_ten || 'Chưa cập nhật',
                             monthlyRent,
                             monthsRented,
@@ -178,8 +192,16 @@ export function OverviewPage({ selectedHostel, occupiedRoomsCount }: OverviewPag
                             moveInDate: contract.ngay_bat_dau,
                             status: 'active' // Chỉ hiển thị các hợp đồng hiệu lực
                         })
+                    } else {
+                        console.log(`Missing data for contract ${index + 1}:`, {
+                            tenant: tenant,
+                            room: room,
+                            contract: contract
+                        })
                     }
                 })
+
+                console.log('Final room revenue data length:', roomRevenueData.length)
 
                 setRoomRevenues(roomRevenueData)
                 setTotalMonthlyRevenue(totalRevenue)
@@ -189,7 +211,9 @@ export function OverviewPage({ selectedHostel, occupiedRoomsCount }: OverviewPag
 
                 // Tính cho tất cả phòng (kể cả phòng trống)
                 hostelCanHo.forEach(room => {
-                    const roomType = room.loai_can_ho || 'Phòng đơn'
+                    // Xác định loại phòng dựa trên diện tích và giá thuê
+                    const roomType = determineRoomType(room.dien_tich, room.gia_thue)
+
                     if (!revenueByType[roomType]) {
                         revenueByType[roomType] = {
                             roomType,
@@ -216,7 +240,7 @@ export function OverviewPage({ selectedHostel, occupiedRoomsCount }: OverviewPag
 
                 setRevenueByRoomType(Object.values(revenueByType))
 
-                // Tạo dữ liệu thống kê hàng tháng (12 tháng gần nhất)
+                // Tạo dữ liệu thống kê hàng tháng (12 tháng gần nhất) dựa trên dữ liệu thực
                 const monthlyStatsData: MonthlyStats[] = []
                 const currentDate = new Date()
 
@@ -224,14 +248,46 @@ export function OverviewPage({ selectedHostel, occupiedRoomsCount }: OverviewPag
                     const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1)
                     const monthName = date.toLocaleDateString('vi-VN', { month: 'short' })
 
-                    // Tính doanh thu giả định (có thể thay thế bằng dữ liệu thực)
-                    const monthlyRevenue = totalRevenue + Math.random() * 1000000
-                    const monthlyExpenses = monthlyRevenue * 0.3 // Giả định chi phí = 30% doanh thu
+                    // Tính doanh thu thực cho tháng này dựa trên hợp đồng hiệu lực trong tháng đó
+                    let monthlyRevenue = 0
+                    const targetMonth = date.getMonth() + 1
+                    const targetYear = date.getFullYear()
+
+                    // Tính doanh thu từ các hợp đồng đang hiệu lực trong tháng này
+                    activeContracts.forEach((contract: any) => {
+                        const startDate = new Date(contract.ngay_bat_dau)
+                        const endDate = contract.ngay_ket_thuc ? new Date(contract.ngay_ket_thuc) : new Date()
+
+                        // Kiểm tra xem hợp đồng có hiệu lực trong tháng này không
+                        const contractStartMonth = startDate.getMonth() + 1
+                        const contractStartYear = startDate.getFullYear()
+                        const contractEndMonth = endDate.getMonth() + 1
+                        const contractEndYear = endDate.getFullYear()
+
+                        // Nếu hợp đồng bắt đầu trước hoặc trong tháng này và kết thúc sau hoặc trong tháng này
+                        if ((contractStartYear < targetYear || (contractStartYear === targetYear && contractStartMonth <= targetMonth)) &&
+                            (contractEndYear > targetYear || (contractEndYear === targetYear && contractEndMonth >= targetMonth))) {
+                            const room = contract.can_ho
+                            if (room && room.gia_thue) {
+                                monthlyRevenue += room.gia_thue
+                            }
+                        }
+                    })
+
+                    // Nếu không có doanh thu thực (tháng trong tương lai), sử dụng doanh thu hiện tại
+                    if (i === 0 && monthlyRevenue === 0) {
+                        monthlyRevenue = totalRevenue
+                    }
+
+                    // Tính chi phí dựa trên doanh thu và chi phí cố định
+                    const fixedCosts = Math.round(totalRooms * 500000) // Chi phí cố định: 500k/phòng/tháng
+                    const variableCosts = Math.round(monthlyRevenue * 0.15) // Chi phí biến đổi: 15% doanh thu
+                    const monthlyExpenses = fixedCosts + variableCosts
 
                     monthlyStatsData.push({
                         month: monthName,
                         revenue: Math.round(monthlyRevenue),
-                        expenses: Math.round(monthlyExpenses),
+                        expenses: monthlyExpenses,
                         profit: Math.round(monthlyRevenue - monthlyExpenses),
                         occupancy: roomStatsData.occupancyRate
                     })
@@ -415,27 +471,78 @@ export function OverviewPage({ selectedHostel, occupiedRoomsCount }: OverviewPag
             </div>
 
             {/* Charts */}
-            <div className="grid gap-6 md:grid-cols-2">
-                <ChartCard title="Doanh thu & Chi phí theo tháng">
+            <div className="grid gap-6 lg:grid-cols-2">
+                {/* Biểu đồ Doanh thu */}
+                <ChartCard title="Doanh thu theo tháng">
                     <ResponsiveContainer width="100%" height={300}>
-                        <AreaChart data={monthlyStats}>
+                        <BarChart data={monthlyStats}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="month" />
                             <YAxis />
                             <Tooltip
-                                formatter={(value, name) => [
+                                formatter={(value) => [
                                     `${Number(value).toLocaleString('vi-VN')}₫`,
-                                    name === 'revenue' ? 'Doanh thu' : name === 'expenses' ? 'Chi phí' : 'Lợi nhuận'
+                                    'Doanh thu'
                                 ]}
                             />
-                            <Legend />
-                            <Area type="monotone" dataKey="revenue" stackId="1" stroke="#8884d8" fill="#8884d8" />
-                            <Area type="monotone" dataKey="expenses" stackId="2" stroke="#82ca9d" fill="#82ca9d" />
-                            <Area type="monotone" dataKey="profit" stackId="3" stroke="#ffc658" fill="#ffc658" />
-                        </AreaChart>
+                            <Bar
+                                dataKey="revenue"
+                                fill="#10b981"
+                                radius={[4, 4, 0, 0]}
+                            />
+                        </BarChart>
                     </ResponsiveContainer>
                 </ChartCard>
 
+                {/* Biểu đồ Chi phí */}
+                <ChartCard title="Chi phí theo tháng">
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={monthlyStats}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="month" />
+                            <YAxis />
+                            <Tooltip
+                                formatter={(value) => [
+                                    `${Number(value).toLocaleString('vi-VN')}₫`,
+                                    'Chi phí'
+                                ]}
+                            />
+                            <Bar
+                                dataKey="expenses"
+                                fill="#ef4444"
+                                radius={[4, 4, 0, 0]}
+                            />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </ChartCard>
+            </div>
+
+            {/* Biểu đồ Lợi nhuận */}
+            <div className="grid gap-6">
+                <ChartCard title="Lợi nhuận theo tháng">
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={monthlyStats}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="month" />
+                            <YAxis />
+                            <Tooltip
+                                formatter={(value) => [
+                                    `${Number(value).toLocaleString('vi-VN')}₫`,
+                                    'Lợi nhuận'
+                                ]}
+                            />
+                            <Bar
+                                dataKey="profit"
+                                fill="#f59e0b"
+                                radius={[4, 4, 0, 0]}
+                            />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </ChartCard>
+            </div>
+
+            {/* Biểu đồ phân bổ doanh thu theo loại phòng */}
+            <div className="grid gap-6">
                 <ChartCard title="Phân bổ doanh thu theo loại phòng">
                     <ResponsiveContainer width="100%" height={300}>
                         <PieChart>
