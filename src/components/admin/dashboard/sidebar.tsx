@@ -1,6 +1,6 @@
 "use client"
 
-import { LayoutDashboard, Users, UserCheck, Bell, Building2, PlusSquare } from "lucide-react"
+import { LayoutDashboard, Users, UserCheck, Bell, Building2, PlusSquare, DollarSign } from "lucide-react"
 import { Button } from "@/components/admin/ui/button"
 import { Card, CardContent } from "@/components/admin/ui/card"
 
@@ -112,7 +112,17 @@ export function DashboardSidebar({ activeTab, selectedHostel, occupiedRoomsCount
                         <span className="font-semibold">Quản lý khu trọ </span>
                     </Button>
 
-
+                    <Button
+                        variant={activeTab === "expenses" ? "default" : "ghost"}
+                        className={`w-full justify-start h-12 transition-all duration-300 rounded-xl ${activeTab === "expenses"
+                            ? "bg-blue-600 text-white shadow-lg hover:shadow-xl"
+                            : "hover:bg-gray-100 hover:shadow-md"
+                            }`}
+                        onClick={() => onTabChange("expenses")}
+                    >
+                        <DollarSign className="mr-3 h-5 w-5" />
+                        <span className="font-semibold">Chi tiêu</span>
+                    </Button>
 
                     <Button
                         variant={activeTab === "notifications" ? "default" : "ghost"}

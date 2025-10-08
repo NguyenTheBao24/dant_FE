@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react"
 import { listCanHoByToaNha, determineRoomType } from "@/services/can-ho.service"
 import { listHopDongByToaNha } from "@/services/hop-dong.service"
+// Import chi-tieu service dynamically to avoid circular dependencies
 
-export function useOverviewData(selectedHostel, occupiedRoomsCount) {
-    const [roomRevenues, setRoomRevenues] = useState([])
+export function useOverviewData(selectedHostel: any, occupiedRoomsCount: number) {
+    const [roomRevenues, setRoomRevenues] = useState<any[]>([])
     const [totalMonthlyRevenue, setTotalMonthlyRevenue] = useState(0)
-    const [revenueByRoomType, setRevenueByRoomType] = useState([])
-    const [monthlyStats, setMonthlyStats] = useState([])
+    const [revenueByRoomType, setRevenueByRoomType] = useState<any[]>([])
+    const [monthlyStats, setMonthlyStats] = useState<any[]>([])
     const [tenantStats, setTenantStats] = useState({
         total: 0,
         active: 0,
@@ -43,15 +44,15 @@ export function useOverviewData(selectedHostel, occupiedRoomsCount) {
 
                 // Lấy danh sách khách thuê từ hợp đồng (đã có sẵn trong hostelContracts)
                 const hostelTenants = hostelContracts
-                    .filter((contract) => contract.khach_thue)
-                    .map((contract) => contract.khach_thue)
+                    .filter((contract: any) => contract.khach_thue)
+                    .map((contract: any) => contract.khach_thue)
 
                 console.log('Hostel contracts:', hostelContracts.length)
                 console.log('Hostel tenants from contracts:', hostelTenants.length)
 
                 // Tính toán thống kê phòng - sử dụng occupiedRoomsCount từ Dashboard (giống sidebar)
                 const totalRooms = hostelCanHo.length
-                const maintenanceRooms = hostelCanHo.filter((room) => room.trang_thai === 'sua_chua').length
+                const maintenanceRooms = hostelCanHo.filter((room: any) => room.trang_thai === 'sua_chua').length
                 const occupiedRooms = occupiedRoomsCount // Sử dụng giá trị từ Dashboard
                 const availableRooms = totalRooms - occupiedRooms - maintenanceRooms
 
@@ -85,16 +86,16 @@ export function useOverviewData(selectedHostel, occupiedRoomsCount) {
                 setTenantStats(tenantStatsData)
 
                 // Tính toán doanh thu theo phòng - đảm bảo hiển thị đúng số phòng đã thuê
-                const roomRevenueData = []
+                const roomRevenueData: any[] = []
                 let totalRevenue = 0
 
                 // Lấy tất cả hợp đồng hiệu lực (không giới hạn slice)
-                const activeContracts = hostelContracts.filter((contract) => contract.trang_thai === 'hieu_luc')
+                const activeContracts = hostelContracts.filter((contract: any) => contract.trang_thai === 'hieu_luc')
 
                 console.log('Total active contracts:', activeContracts.length)
                 console.log('Occupied rooms count:', occupiedRoomsCount)
 
-                activeContracts.forEach((contract, index) => {
+                activeContracts.forEach((contract: any, index: number) => {
                     const tenant = contract.khach_thue
                     const room = contract.can_ho
 
@@ -144,10 +145,10 @@ export function useOverviewData(selectedHostel, occupiedRoomsCount) {
                 setTotalMonthlyRevenue(totalRevenue)
 
                 // Tính toán doanh thu theo loại phòng
-                const revenueByType = {}
+                const revenueByType: { [key: string]: any } = {}
 
                 // Tính cho tất cả phòng (kể cả phòng trống)
-                hostelCanHo.forEach(room => {
+                hostelCanHo.forEach((room: any) => {
                     // Xác định loại phòng dựa trên diện tích và giá thuê
                     const roomType = determineRoomType(room.dien_tich, room.gia_thue)
 
@@ -171,11 +172,21 @@ export function useOverviewData(selectedHostel, occupiedRoomsCount) {
                 })
 
                 // Tính trung bình
-                Object.values(revenueByType).forEach(type => {
+                Object.values(revenueByType).forEach((type: any) => {
                     type.avgRevenue = type.count > 0 ? type.totalRevenue / type.count : 0
                 })
 
                 setRevenueByRoomType(Object.values(revenueByType))
+
+                // Lấy tất cả chi tiêu của tòa nhà để tính toán hiệu quả hơn
+                let allExpenses: any[] = []
+                try {
+                    const { listChiTieuByToaNha } = await import("@/services/chi-tieu.service")
+                    allExpenses = await listChiTieuByToaNha(selectedHostel.id)
+                    console.log('Loaded expenses for overview:', allExpenses.length)
+                } catch (error) {
+                    console.error('Error loading expenses:', error)
+                }
 
                 // Tạo dữ liệu thống kê hàng tháng (12 tháng gần nhất) dựa trên dữ liệu thực
                 const monthlyStatsData = []
@@ -191,7 +202,7 @@ export function useOverviewData(selectedHostel, occupiedRoomsCount) {
                     const targetYear = date.getFullYear()
 
                     // Tính doanh thu từ các hợp đồng đang hiệu lực trong tháng này
-                    activeContracts.forEach((contract) => {
+                    activeContracts.forEach((contract: any) => {
                         const startDate = new Date(contract.ngay_bat_dau)
                         const endDate = contract.ngay_ket_thuc ? new Date(contract.ngay_ket_thuc) : new Date()
 
@@ -216,15 +227,32 @@ export function useOverviewData(selectedHostel, occupiedRoomsCount) {
                         monthlyRevenue = totalRevenue
                     }
 
-                    // Tính chi phí dựa trên doanh thu và chi phí cố định
-                    const fixedCosts = Math.round(totalRooms * 500000) // Chi phí cố định: 500k/phòng/tháng
-                    const variableCosts = Math.round(monthlyRevenue * 0.15) // Chi phí biến đổi: 15% doanh thu
-                    const monthlyExpenses = fixedCosts + variableCosts
+                    // Tính chi phí thực từ dữ liệu đã load
+                    let monthlyExpenses = 0
+                    if (allExpenses.length > 0) {
+                        // Lọc chi tiêu theo tháng
+                        const monthExpenses = allExpenses.filter((expense: any) => {
+                            const expenseDate = new Date(expense.ngay)
+                            return expenseDate.getFullYear() === targetYear &&
+                                expenseDate.getMonth() + 1 === targetMonth
+                        })
+
+                        monthlyExpenses = monthExpenses.reduce((sum: number, expense: any) => {
+                            return sum + (expense.so_tien || 0)
+                        }, 0)
+
+                        console.log(`Month ${targetYear}-${targetMonth}: ${monthExpenses.length} expenses, total: ${monthlyExpenses}`)
+                    } else {
+                        // Fallback: sử dụng chi phí ước tính nếu không có dữ liệu thực
+                        const fixedCosts = Math.round(totalRooms * 500000) // Chi phí cố định: 500k/phòng/tháng
+                        const variableCosts = Math.round(monthlyRevenue * 0.15) // Chi phí biến đổi: 15% doanh thu
+                        monthlyExpenses = fixedCosts + variableCosts
+                    }
 
                     monthlyStatsData.push({
                         month: monthName,
                         revenue: Math.round(monthlyRevenue),
-                        expenses: monthlyExpenses,
+                        expenses: Math.round(monthlyExpenses),
                         profit: Math.round(monthlyRevenue - monthlyExpenses),
                         occupancy: roomStatsData.occupancyRate
                     })

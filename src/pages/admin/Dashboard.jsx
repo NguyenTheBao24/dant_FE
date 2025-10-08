@@ -8,6 +8,7 @@ import { OverviewPage } from "@/components/admin/pages/overview-page"
 import { ContactPage } from "@/components/admin/pages/contact-page"
 import { NotificationsPage } from "@/components/admin/pages/notifications-page"
 import { AddHostelPage } from "@/components/admin/pages/add-hostel-page"
+import { ExpensesPage } from "@/components/admin/pages/expenses-page"
 
 // Removed old data imports - using Supabase data instead
 import { createToaNha, deleteToaNha, listToaNha } from "@/services/toa-nha.service"
@@ -476,6 +477,8 @@ export default function Dashboard() {
                 )
             case "contact":
                 return <ContactPage selectedHostel={selectedHostel} onManagerAction={handleManagerAction} />
+            case "expenses":
+                return <ExpensesPage selectedHostel={selectedHostel} />
             case "analytics":
                 return <AnalyticsPage chartData={chartData} />
             case "notifications":
