@@ -2,84 +2,106 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/card"
 import { Button } from "@/components/admin/ui/button"
 import { listHopDongByToaNha } from "@/services/hop-dong.service"
+import { AddTenantDialog } from "@/components/manager/dialogs/AddTenantDialog"
 import {
     Users,
     Search,
     Filter,
-    Plus,
     Edit,
     Eye,
     Phone,
     Mail,
-    Calendar,
     DollarSign,
     Home
 } from "lucide-react"
+
+interface Tenant {
+    id: string | number
+    name: string
+    phone: string
+    email: string
+    room: string
+    contractStart: string
+    contractEnd: string
+    rentAmount: number
+    status: string
+    lastPayment: string
+    hopDongId: string | number
+    khachThueId: string | number
+    canHoId: string | number
+}
 
 interface TenantsPageProps {
     selectedHostel: any
 }
 
 export function TenantsPage({ selectedHostel }: TenantsPageProps) {
-    const [tenants, setTenants] = useState([])
+    const [tenants, setTenants] = useState<Tenant[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
-    const [selectedTenant, setSelectedTenant] = useState(null)
+    const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null)
     const [showTenantModal, setShowTenantModal] = useState(false)
+    const [showAddTenantDialog, setShowAddTenantDialog] = useState(false)
 
     useEffect(() => {
-        const loadTenants = async () => {
-            if (!selectedHostel?.id) return
-
-            setIsLoading(true)
-            try {
-                console.log('Loading tenants for toa nha ID:', selectedHostel.id)
-                console.log('Selected hostel info:', {
-                    id: selectedHostel.id,
-                    name: selectedHostel.ten_toa || selectedHostel.ten || selectedHostel.name
-                })
-
-                // Load hợp đồng từ tòa nhà
-                const hopDongList = await listHopDongByToaNha(selectedHostel.id)
-                console.log('Found hop dong list:', hopDongList)
-                console.log('Number of contracts found:', hopDongList.length)
-
-                // Transform data để phù hợp với UI
-                const tenantsData = hopDongList.map((hopDong: any) => {
-                    console.log('Processing hop dong:', hopDong)
-                    console.log('Can ho info:', hopDong.can_ho)
-                    console.log('Khach thue info:', hopDong.khach_thue)
-
-                    return {
-                        id: hopDong.khach_thue?.id || hopDong.id,
-                        name: hopDong.khach_thue?.ho_ten || 'Không có tên',
-                        phone: hopDong.khach_thue?.sdt || 'Không có số điện thoại',
-                        email: hopDong.khach_thue?.email || 'Không có email',
-                        room: hopDong.can_ho?.so_can || 'Không có phòng',
-                        contractStart: hopDong.ngay_bat_dau,
-                        contractEnd: hopDong.ngay_ket_thuc,
-                        rentAmount: hopDong.can_ho?.gia_thue || 0,
-                        status: hopDong.trang_thai === 'hieu_luc' ? 'active' : 'expired',
-                        lastPayment: hopDong.ngay_thanh_toan_cuoi || hopDong.ngay_bat_dau,
-                        hopDongId: hopDong.id,
-                        khachThueId: hopDong.khach_thue_id,
-                        canHoId: hopDong.can_ho_id
-                    }
-                })
-
-                console.log('Transformed tenants data:', tenantsData)
-                console.log('Total tenants for this building:', tenantsData.length)
-                setTenants(tenantsData)
-            } catch (error) {
-                console.error('Error loading tenants:', error)
-                setTenants([])
-            } finally {
-                setIsLoading(false)
-            }
-        }
-
         loadTenants()
     }, [selectedHostel])
+
+    const loadTenants = async () => {
+        if (!selectedHostel?.id) return
+
+        setIsLoading(true)
+        try {
+            console.log('Loading tenants for toa nha ID:', selectedHostel.id)
+            console.log('Selected hostel info:', {
+                id: selectedHostel.id,
+                name: selectedHostel.ten_toa || selectedHostel.ten || selectedHostel.name
+            })
+
+            // Load hợp đồng từ tòa nhà
+            const hopDongList = await listHopDongByToaNha(selectedHostel.id)
+            console.log('Found hop dong list:', hopDongList)
+            console.log('Number of contracts found:', hopDongList.length)
+
+            // Transform data để phù hợp với UI
+            const tenantsData: Tenant[] = hopDongList.map((hopDong: any) => {
+                console.log('Processing hop dong:', hopDong)
+                console.log('Can ho info:', hopDong.can_ho)
+                console.log('Khach thue info:', hopDong.khach_thue)
+
+                return {
+                    id: hopDong.khach_thue?.id || hopDong.id,
+                    name: hopDong.khach_thue?.ho_ten || 'Không có tên',
+                    phone: hopDong.khach_thue?.sdt || 'Không có số điện thoại',
+                    email: hopDong.khach_thue?.email || 'Không có email',
+                    room: hopDong.can_ho?.so_can || 'Không có phòng',
+                    contractStart: hopDong.ngay_bat_dau,
+                    contractEnd: hopDong.ngay_ket_thuc,
+                    rentAmount: hopDong.can_ho?.gia_thue || 0,
+                    status: hopDong.trang_thai === 'hieu_luc' ? 'active' : 'expired',
+                    lastPayment: hopDong.ngay_thanh_toan_cuoi || hopDong.ngay_bat_dau,
+                    hopDongId: hopDong.id,
+                    khachThueId: hopDong.khach_thue_id,
+                    canHoId: hopDong.can_ho_id
+                }
+            })
+
+            console.log('Transformed tenants data:', tenantsData)
+            console.log('Total tenants for this building:', tenantsData.length)
+            setTenants(tenantsData)
+        } catch (error) {
+            console.error('Error loading tenants:', error)
+            setTenants([])
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const handleAddTenant = async (tenantData: any) => {
+        console.log('New tenant added:', tenantData)
+        // Reload tenants list after adding new tenant
+        await loadTenants()
+    }
 
     const filteredTenants = tenants.filter(tenant =>
         tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -140,10 +162,12 @@ export function TenantsPage({ selectedHostel }: TenantsPageProps) {
                         Quản lý thông tin khách thuê tại khu trọ <span className="font-semibold">{selectedHostel.ten_toa || selectedHostel.ten || selectedHostel.name || 'Không có tên'}</span>
                     </p>
                 </div>
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Thêm khách thuê
-                </Button>
+                <AddTenantDialog
+                    isOpen={showAddTenantDialog}
+                    onOpenChange={setShowAddTenantDialog}
+                    onAddTenant={handleAddTenant}
+                    selectedHostel={selectedHostel}
+                />
             </div>
 
             {/* Search and Filter */}
@@ -254,10 +278,14 @@ export function TenantsPage({ selectedHostel }: TenantsPageProps) {
                                 }
                             </p>
                             {tenants.length === 0 && (
-                                <Button className="mt-4 bg-blue-600 hover:bg-blue-700">
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Thêm khách thuê đầu tiên
-                                </Button>
+                                <div className="mt-4">
+                                    <AddTenantDialog
+                                        isOpen={showAddTenantDialog}
+                                        onOpenChange={setShowAddTenantDialog}
+                                        onAddTenant={handleAddTenant}
+                                        selectedHostel={selectedHostel}
+                                    />
+                                </div>
                             )}
                         </div>
                     ) : (
