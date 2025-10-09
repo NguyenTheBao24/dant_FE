@@ -5,10 +5,6 @@ import { Badge } from "@/components/admin/ui/badge"
 import {
     Home,
     Users,
-    DollarSign,
-    Square,
-    Calendar,
-    Plus,
     Edit,
     Eye
 } from "lucide-react"
@@ -90,21 +86,15 @@ export function RoomsPage({ selectedHostel }: RoomsPageProps) {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-                        Quản lý phòng
-                    </h2>
-                    <p className="text-gray-600 mt-1">
-                        Danh sách phòng của khu trọ <span className="font-semibold">
-                            {selectedHostel.ten_toa || selectedHostel.ten || selectedHostel.name || 'Không có tên'}
-                        </span>
-                    </p>
-                </div>
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Thêm phòng mới
-                </Button>
+            <div>
+                <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+                    Quản lý phòng
+                </h2>
+                <p className="text-gray-600 mt-1">
+                    Danh sách phòng của khu trọ <span className="font-semibold">
+                        {selectedHostel.ten_toa || selectedHostel.ten || selectedHostel.name || 'Không có tên'}
+                    </span>
+                </p>
             </div>
 
             {/* Stats Cards */}
@@ -176,11 +166,7 @@ export function RoomsPage({ selectedHostel }: RoomsPageProps) {
                             <CardContent className="p-12 text-center">
                                 <Home className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                                 <h3 className="text-lg font-semibold text-gray-600 mb-2">Chưa có phòng nào</h3>
-                                <p className="text-gray-500 mb-4">Khu trọ này chưa có phòng nào được tạo</p>
-                                <Button className="bg-blue-600 hover:bg-blue-700">
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Tạo phòng đầu tiên
-                                </Button>
+                                <p className="text-gray-500">Khu trọ này chưa có phòng nào được tạo</p>
                             </CardContent>
                         </Card>
                     </div>

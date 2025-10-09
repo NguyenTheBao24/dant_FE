@@ -52,11 +52,11 @@ export function ManagerSidebar({
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                                 <span className="text-gray-600">Tên:</span>
-                                <span className="font-medium">{selectedHostel.name}</span>
+                                <span className="font-medium">{selectedHostel.ten_toa || selectedHostel.ten || selectedHostel.name || 'Không có tên'}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-gray-600">Địa chỉ:</span>
-                                <span className="font-medium truncate ml-2">{selectedHostel.dia_chi}</span>
+                                <span className="font-medium truncate ml-2">{selectedHostel.dia_chi || selectedHostel.address || 'Không có địa chỉ'}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-gray-600">Tổng phòng:</span>
