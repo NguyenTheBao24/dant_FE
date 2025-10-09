@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { ManagerDashboard } from "@/components/manager/pages/ManagerDashboard"
 import { getQuanLyByTaiKhoanId, getToaNhaByQuanLy } from "@/services/quan-ly.service"
+import { listCanHoByToaNha } from "@/services/can-ho.service"
 
 export default function ManagerIndex() {
     const navigate = useNavigate()
@@ -52,8 +53,28 @@ export default function ManagerIndex() {
                 // Lấy tòa nhà đầu tiên (có thể có nhiều tòa nhà)
                 const toaNha = toaNhaList[0]
                 console.log('Selected toa nha:', toaNha)
+                console.log('Toa nha fields:', Object.keys(toaNha))
+                console.log('Toa nha details:', {
+                    id: toaNha.id,
+                    ten: toaNha.ten_toa || toaNha.ten || toaNha.name,
+                    dia_chi: toaNha.dia_chi || toaNha.address,
+                    so_dien_thoai: toaNha.so_dien_thoai || toaNha.phone,
+                    quan_ly_id: toaNha.quan_ly_id
+                })
 
-                setSelectedHostel(toaNha)
+                // Load dữ liệu phòng cho tòa nhà này
+                console.log('Loading rooms for toa nha ID:', toaNha.id)
+                const canHoList = await listCanHoByToaNha(toaNha.id)
+                console.log('Found can ho list:', canHoList)
+
+                // Thêm dữ liệu phòng vào tòa nhà
+                const toaNhaWithRooms = {
+                    ...toaNha,
+                    can_ho: canHoList
+                }
+
+                console.log('Final toa nha with rooms:', toaNhaWithRooms)
+                setSelectedHostel(toaNhaWithRooms)
 
             } catch (error) {
                 console.error('Error loading manager data:', error)

@@ -75,7 +75,7 @@ export function OverviewPage({ selectedHostel, occupiedRoomsCount }: OverviewPag
                         Tổng quan khu trọ
                     </h2>
                     <p className="text-gray-600 mt-1">
-                        Quản lý và theo dõi hoạt động của khu trọ <span className="font-semibold">{selectedHostel.name}</span>
+                        Quản lý và theo dõi hoạt động của khu trọ <span className="font-semibold">{selectedHostel.ten_toa || selectedHostel.ten || selectedHostel.name || 'Không có tên'}</span>
                     </p>
                 </div>
                 <div className="flex items-center space-x-2 text-sm text-gray-500">
@@ -225,15 +225,15 @@ export function OverviewPage({ selectedHostel, occupiedRoomsCount }: OverviewPag
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Tên khu trọ:</span>
-                                    <span className="font-medium">{selectedHostel.name}</span>
+                                    <span className="font-medium">{selectedHostel.ten_toa || selectedHostel.ten || selectedHostel.name || 'Không có tên'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Địa chỉ:</span>
-                                    <span className="font-medium">{selectedHostel.dia_chi}</span>
+                                    <span className="font-medium">{selectedHostel.dia_chi || selectedHostel.address || 'Không có địa chỉ'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Số điện thoại:</span>
-                                    <span className="font-medium">{selectedHostel.so_dien_thoai}</span>
+                                    <span className="font-medium">{selectedHostel.so_dien_thoai || selectedHostel.phone || 'Không có số điện thoại'}</span>
                                 </div>
                             </div>
                         </div>

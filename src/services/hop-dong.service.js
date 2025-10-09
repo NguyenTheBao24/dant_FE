@@ -17,11 +17,26 @@ export async function listHopDong() {
 
 export async function listHopDongByToaNha(toaNhaId) {
     if (!isReady()) return []
+
+    // First get all rooms in the building
+    const { data: rooms, error: roomsError } = await supabase
+        .from('can_ho')
+        .select('id')
+        .eq('toa_nha_id', toaNhaId)
+
+    if (roomsError) throw roomsError
+    if (!rooms || rooms.length === 0) return []
+
+    // Get room IDs
+    const roomIds = rooms.map(room => room.id)
+
+    // Then get contracts for those rooms
     const { data, error } = await supabase
         .from('hop_dong')
         .select('*, can_ho:can_ho_id(id, so_can, toa_nha_id, gia_thue), khach_thue:khach_thue_id(id, ho_ten, sdt, email, cccd, tai_khoan_id, tai_khoan:tai_khoan_id(id, username, password, role, created_at))')
-        .eq('can_ho.toa_nha_id', toaNhaId)
+        .in('can_ho_id', roomIds)
         .order('ngay_bat_dau', { ascending: false })
+
     if (error) throw error
     return data || []
 }

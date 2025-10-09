@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { ManagerSidebar } from "@/components/manager/dashboard/sidebar"
 import { OverviewPage } from "@/components/manager/pages/overview-page"
 import { TenantsPage } from "@/components/manager/pages/tenants-page"
+import { RoomsPage } from "@/components/manager/pages/rooms-page"
 
 interface ManagerDashboardProps {
     selectedHostel?: any
@@ -47,14 +48,7 @@ export function ManagerDashboard({ selectedHostel }: ManagerDashboardProps) {
             case "tenants":
                 return <TenantsPage selectedHostel={selectedHostel} />
             case "rooms":
-                return (
-                    <div className="flex items-center justify-center h-96">
-                        <div className="text-center">
-                            <h3 className="text-lg font-semibold text-gray-600 mb-2">Quản lý phòng</h3>
-                            <p className="text-gray-500">Tính năng đang được phát triển</p>
-                        </div>
-                    </div>
-                )
+                return <RoomsPage selectedHostel={selectedHostel} />
             case "contracts":
                 return (
                     <div className="flex items-center justify-center h-96">

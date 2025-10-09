@@ -53,14 +53,14 @@ export async function getQuanLyByTaiKhoanId(taiKhoanId) {
     return data
 }
 
-
 export async function getToaNhaByQuanLy(quanLyId) {
     if (!isReady()) return []
     const { data, error } = await supabase
         .from('toa_nha')
-        .select('*') // có thể thay * bằng các cột cụ thể: 'id, ten_toa, dia_chi'
+        .select('*')
         .eq('quan_ly_id', quanLyId)
 
     if (error) throw error
     return data
 }
+
