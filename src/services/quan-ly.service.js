@@ -42,4 +42,25 @@ export async function deleteQuanLy(id) {
     return { id }
 }
 
+export async function getQuanLyByTaiKhoanId(taiKhoanId) {
+    if (!isReady()) return null
+    const { data, error } = await supabase
+        .from('quan_ly')
+        .select('*, tai_khoan: tai_khoan_id (id, username, role, password)')
+        .eq('tai_khoan_id', taiKhoanId)
+        .single()
+    if (error) throw error
+    return data
+}
 
+
+export async function getToaNhaByQuanLy(quanLyId) {
+    if (!isReady()) return []
+    const { data, error } = await supabase
+        .from('toa_nha')
+        .select('*') // có thể thay * bằng các cột cụ thể: 'id, ten_toa, dia_chi'
+        .eq('quan_ly_id', quanLyId)
+
+    if (error) throw error
+    return data
+}

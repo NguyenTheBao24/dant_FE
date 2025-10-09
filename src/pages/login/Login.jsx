@@ -43,8 +43,8 @@ const Login = () => {
             if (account.role === 'admin') {
                 navigate('/admin/dashboard')
             } else if (account.role === 'quan_ly') {
-                // Tạm thời điều hướng vào dashboard. Có thể chuyển sang trang riêng cho quản lý nếu cần.
-                navigate('/admin/dashboard')
+                // Điều hướng vào manager dashboard
+                navigate('/manager')
             } else {
                 alert('Vai trò không được hỗ trợ')
             }

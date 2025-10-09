@@ -4,6 +4,7 @@ import { lazy } from 'react';
 const BoardingHouseShowcase = lazy(() => import('../pages/boardingHouse/BoardingHouseShowcase'));
 const Login = lazy(() => import('../pages/login/Login'));
 const AdminIndex = lazy(() => import('../pages/admin/AdminIndex'));
+const ManagerIndex = lazy(() => import('../pages/manager/ManagerIndex'));
 
 
 
@@ -94,6 +95,15 @@ export const ROUTES_CONFIG = [
     isAuth: false,
     isPublic: true,
     layout: 'admin'
+  },
+  {
+    id: 'manager',
+    path: '/manager/*',
+    component: ManagerIndex,
+    title: 'Manager Dashboard',
+    isAuth: false,
+    isPublic: true,
+    layout: 'manager'
   },
 
 
