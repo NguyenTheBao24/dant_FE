@@ -7,9 +7,13 @@ import SubmitButton from '../ui/SubmitButton';
 import SuccessMessage from '../ui/SuccessMessage';
 import SectionHeader from '../ui/SectionHeader';
 import BackgroundEffects from '../ui/BackgroundEffects';
+import BuildingSelection from './BuildingSelection';
+import { createQuanTam } from '../../services/quan-tam.service';
 
 const ContactFormSection = ({ contactForm, setContactForm, onSubmit, isSubmitted }) => {
     const [activePopup, setActivePopup] = useState(null); // 'terms' hoặc 'privacy'
+    const [selectedBuilding, setSelectedBuilding] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -25,6 +29,68 @@ const ContactFormSection = ({ contactForm, setContactForm, onSubmit, isSubmitted
 
     const closePopup = () => {
         setActivePopup(null);
+    };
+
+    const handleBuildingSelect = (building) => {
+        setSelectedBuilding(building);
+        // Cập nhật thông tin tòa nhà vào form
+        setContactForm(prev => ({
+            ...prev,
+            buildingName: building.ten_toa || building.name || '',
+            buildingAddress: building.dia_chi || building.address || '',
+            buildingPhone: building.so_dien_thoai || building.phone || ''
+        }));
+    };
+
+    const handleFormSubmit = async (e) => {
+        e.preventDefault();
+
+        // Validate required fields
+        if (!contactForm.name.trim()) {
+            alert('Vui lòng nhập họ và tên');
+            return;
+        }
+
+        if (!contactForm.phone.trim()) {
+            alert('Vui lòng nhập số điện thoại');
+            return;
+        }
+
+        if (!selectedBuilding) {
+            alert('Vui lòng chọn tòa nhà bạn quan tâm');
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        try {
+            // Chuẩn bị dữ liệu để lưu vào database
+            const quanTamData = {
+                toa_nha_id: selectedBuilding.id,
+                ho_ten: contactForm.name.trim(),
+                sdt: contactForm.phone.trim(),
+                email: contactForm.email?.trim() || null,
+                ghi_chu: contactForm.message?.trim() || null
+            };
+
+            console.log('Submitting quan tam data:', quanTamData);
+
+            // Lưu vào database
+            const savedData = await createQuanTam(quanTamData);
+            console.log('Successfully saved quan tam:', savedData);
+
+            // Gọi onSubmit từ parent component
+            onSubmit(e);
+
+            // Reset form
+            setSelectedBuilding(null);
+
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            alert('Có lỗi xảy ra khi gửi thông tin. Vui lòng thử lại.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     // Dữ liệu options cho dropdown loại phòng
@@ -170,7 +236,7 @@ const ContactFormSection = ({ contactForm, setContactForm, onSubmit, isSubmitted
                             {isSubmitted ? (
                                 <SuccessMessage />
                             ) : (
-                                <form onSubmit={onSubmit} className="space-y-8 relative z-10">
+                                <form onSubmit={handleFormSubmit} className="space-y-8 relative z-10">
                                     <div className="grid md:grid-cols-2 gap-8">
                                         <FormInput
                                             type="text"
@@ -215,6 +281,11 @@ const ContactFormSection = ({ contactForm, setContactForm, onSubmit, isSubmitted
                                         focusColor="orange-400"
                                     />
 
+                                    <BuildingSelection
+                                        selectedBuilding={selectedBuilding}
+                                        onBuildingSelect={handleBuildingSelect}
+                                    />
+
                                     <FormTextarea
                                         name="message"
                                         value={contactForm.message}
@@ -225,8 +296,8 @@ const ContactFormSection = ({ contactForm, setContactForm, onSubmit, isSubmitted
                                         focusColor="indigo-400"
                                     />
 
-                                    <SubmitButton type="submit">
-                                        Gửi Thông Tin Liên Hệ
+                                    <SubmitButton type="submit" disabled={isSubmitting}>
+                                        {isSubmitting ? 'Đang gửi...' : 'Gửi Thông Tin Liên Hệ'}
                                     </SubmitButton>
 
                                     <p className="text-sm text-blue-200/80 text-center leading-relaxed">

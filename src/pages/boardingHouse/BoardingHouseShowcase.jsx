@@ -20,7 +20,10 @@ const BoardingHouseShowcase = () => {
     phone: '',
     email: '',
     message: '',
-    roomType: ''
+    roomType: '',
+    buildingName: '',
+    buildingAddress: '',
+    buildingPhone: ''
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -36,7 +39,10 @@ const BoardingHouseShowcase = () => {
         phone: '',
         email: '',
         message: '',
-        roomType: ''
+        roomType: '',
+        buildingName: '',
+        buildingAddress: '',
+        buildingPhone: ''
       });
     }, 3000);
   };
