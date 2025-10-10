@@ -90,4 +90,15 @@ export async function listHopDongSapHetHan(toaNhaId, days = 30) {
     return data || []
 }
 
+export async function listHopDongByKhachThue(khachThueId) {
+    if (!isReady()) return []
+    const { data, error } = await supabase
+        .from('hop_dong')
+        .select('*, can_ho:can_ho_id(id, so_can, toa_nha_id, gia_thue, dien_tich), toa_nha:can_ho.toa_nha_id(id, ten_toa, dia_chi, so_dien_thoai)')
+        .eq('khach_thue_id', khachThueId)
+        .order('ngay_bat_dau', { ascending: false })
+    if (error) throw error
+    return data || []
+}
+
 

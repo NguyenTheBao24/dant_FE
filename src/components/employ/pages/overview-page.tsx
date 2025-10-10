@@ -1,0 +1,216 @@
+import { Card, CardContent } from "@/components/admin/ui/card"
+import {
+    Home,
+    DollarSign,
+    Calendar,
+    FileText,
+    AlertCircle,
+    Clock
+} from "lucide-react"
+
+interface OverviewPageProps {
+    userInfo: any
+    userContracts: any[]
+}
+
+export function OverviewPage({ userInfo, userContracts: _ }: OverviewPageProps) {
+
+    if (!userInfo) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <div className="text-center">
+                    <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-600 mb-2">Chưa có thông tin</h3>
+                    <p className="text-gray-500">Không thể tải thông tin người dùng</p>
+                </div>
+            </div>
+        )
+    }
+
+    // const activeContracts = userContracts.filter(contract => contract.trang_thai === 'hieu_luc')
+    // const expiredContracts = userContracts.filter(contract => contract.trang_thai === 'het_han')
+    // const totalRent = activeContracts.reduce((sum, contract) => sum + (contract.can_ho?.gia_thue || 0), 0)
+
+    // // Tính hợp đồng sắp hết hạn (trong 30 ngày)
+    // const today = new Date()
+    // const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
+
+    // const expiringContracts = activeContracts.filter(contract => {
+    //     if (!contract.ngay_ket_thuc) return false
+    //     const endDate = new Date(contract.ngay_ket_thuc)
+    //     return endDate <= thirtyDaysFromNow && endDate >= today
+    // })
+
+    // Tạm thời set các giá trị = 0
+    const activeContracts: any[] = []
+    const totalRent = 0
+    const expiringContracts: any[] = []
+
+    return (
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+                        Tổng quan
+                    </h2>
+                    <p className="text-gray-600 mt-1">
+                        Xin chào, <span className="font-semibold">{userInfo.ho_ten}</span>
+                    </p>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                    <Calendar className="h-4 w-4" />
+                    <span>{new Date().toLocaleDateString('vi-VN')}</span>
+                </div>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                    <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-blue-600">Hợp đồng hiệu lực</p>
+                                <p className="text-2xl font-bold text-blue-700">{activeContracts.length}</p>
+                                <p className="text-xs text-blue-600 mt-1">
+                                    Tạm thời không có dữ liệu
+                                </p>
+                            </div>
+                            <FileText className="h-8 w-8 text-blue-600" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+                    <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-green-600">Tiền thuê/tháng</p>
+                                <p className="text-2xl font-bold text-green-700">
+                                    {totalRent.toLocaleString('vi-VN')}₫
+                                </p>
+                                <p className="text-xs text-green-600 mt-1">
+                                    Từ {activeContracts.length} hợp đồng
+                                </p>
+                            </div>
+                            <DollarSign className="h-8 w-8 text-green-600" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                    <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-purple-600">Phòng đang thuê</p>
+                                <p className="text-2xl font-bold text-purple-700">{activeContracts.length}</p>
+                                <p className="text-xs text-purple-600 mt-1">
+                                    {activeContracts.length > 0 ? activeContracts[0]?.can_ho?.so_can : 'Chưa có phòng'}
+                                </p>
+                            </div>
+                            <Home className="h-8 w-8 text-purple-600" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+                    <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-orange-600">Sắp hết hạn</p>
+                                <p className="text-2xl font-bold text-orange-700">{expiringContracts.length}</p>
+                                <p className="text-xs text-orange-600 mt-1">
+                                    Trong 30 ngày tới
+                                </p>
+                            </div>
+                            <Clock className="h-8 w-8 text-orange-600" />
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Current Contracts - Đã comment */}
+            {/* <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center text-lg">
+                            <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
+                            Hợp đồng hiệu lực
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {activeContracts.length === 0 ? (
+                            <div className="text-center py-4">
+                                <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                                <p className="text-gray-500">Chưa có hợp đồng hiệu lực</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {activeContracts.map((contract) => (
+                                    <div key={contract.id} className="p-3 bg-green-50 rounded-lg border border-green-200">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <p className="font-medium text-green-800">
+                                                    Phòng {contract.can_ho?.so_can || 'N/A'}
+                                                </p>
+                                                <p className="text-sm text-green-600">
+                                                    {contract.can_ho?.dien_tich}m² - {contract.can_ho?.gia_thue?.toLocaleString('vi-VN')}₫/tháng
+                                                </p>
+                                                <p className="text-xs text-green-500">
+                                                    {contract.ngay_bat_dau && new Date(contract.ngay_bat_dau).toLocaleDateString('vi-VN')} - {contract.ngay_ket_thuc && new Date(contract.ngay_ket_thuc).toLocaleDateString('vi-VN')}
+                                                </p>
+                                            </div>
+                                            {getStatusBadge(contract.trang_thai)}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center text-lg">
+                            <AlertCircle className="h-5 w-5 text-yellow-600 mr-2" />
+                            Thông báo gần đây
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-3">
+                            {expiringContracts.length > 0 ? (
+                                expiringContracts.map((contract) => (
+                                    <div key={contract.id} className="flex items-start space-x-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                                        <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-yellow-800">
+                                                Hợp đồng phòng {contract.can_ho?.so_can} sắp hết hạn
+                                            </p>
+                                            <p className="text-xs text-yellow-600">
+                                                Hết hạn: {contract.ngay_ket_thuc && new Date(contract.ngay_ket_thuc).toLocaleDateString('vi-VN')}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-4">
+                                    <CheckCircle className="h-8 w-8 text-green-400 mx-auto mb-2" />
+                                    <p className="text-gray-500">Không có thông báo nào</p>
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div> */}
+
+            {/* Placeholder thay thế */}
+            <Card>
+                <CardContent className="p-12 text-center">
+                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-600 mb-2">Thông tin hợp đồng</h3>
+                    <p className="text-gray-500">Tính năng đang được phát triển</p>
+                </CardContent>
+            </Card>
+        </div>
+    )
+}

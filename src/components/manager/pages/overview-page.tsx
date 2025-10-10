@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/card"
 import { Button } from "@/components/admin/ui/button"
+import { listHopDongByToaNha } from "@/services/hop-dong.service"
 import {
     Users,
     Home,
@@ -27,20 +28,62 @@ export function OverviewPage({ selectedHostel, occupiedRoomsCount }: OverviewPag
     })
 
     useEffect(() => {
-        // Simulate data loading
         const loadData = async () => {
+            if (!selectedHostel?.id) return
+
             setIsLoading(true)
             try {
-                // Mock data - replace with actual API calls
-                await new Promise(resolve => setTimeout(resolve, 1000))
+                console.log('Loading overview data for toa nha ID:', selectedHostel.id)
+
+                // Load hợp đồng từ tòa nhà
+                const hopDongList = await listHopDongByToaNha(selectedHostel.id)
+                console.log('Found hop dong list for overview:', hopDongList)
+
+                // Tính toán stats từ dữ liệu thực
+                const totalTenants = hopDongList.length
+                const activeContracts = hopDongList.filter((hopDong: any) =>
+                    hopDong.trang_thai === 'hieu_luc'
+                ).length
+
+                // Tính doanh thu tháng từ các hợp đồng hiệu lực
+                const monthlyRevenue = hopDongList
+                    .filter((hopDong: any) => hopDong.trang_thai === 'hieu_luc')
+                    .reduce((sum: number, hopDong: any) => {
+                        return sum + (hopDong.can_ho?.gia_thue || 0)
+                    }, 0)
+
+                // Tính số hợp đồng sắp hết hạn (trong 30 ngày tới)
+                const today = new Date()
+                const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
+
+                const pendingPayments = hopDongList.filter((hopDong: any) => {
+                    if (hopDong.trang_thai !== 'hieu_luc' || !hopDong.ngay_ket_thuc) return false
+
+                    const endDate = new Date(hopDong.ngay_ket_thuc)
+                    return endDate <= thirtyDaysFromNow && endDate >= today
+                }).length
+
+                console.log('Calculated stats:', {
+                    totalTenants,
+                    activeContracts,
+                    pendingPayments,
+                    monthlyRevenue
+                })
+
                 setStats({
-                    totalTenants: 45,
-                    activeContracts: 42,
-                    pendingPayments: 8,
-                    monthlyRevenue: 12500000
+                    totalTenants,
+                    activeContracts,
+                    pendingPayments,
+                    monthlyRevenue
                 })
             } catch (error) {
                 console.error('Error loading overview data:', error)
+                setStats({
+                    totalTenants: 0,
+                    activeContracts: 0,
+                    pendingPayments: 0,
+                    monthlyRevenue: 0
+                })
             } finally {
                 setIsLoading(false)
             }
@@ -113,7 +156,7 @@ export function OverviewPage({ selectedHostel, occupiedRoomsCount }: OverviewPag
                                 </p>
                                 <p className="text-xs text-green-600 mt-1">
                                     <TrendingUp className="h-3 w-3 inline mr-1" />
-                                    +12% so với tháng trước
+                                    Từ các hợp đồng hiệu lực
                                 </p>
                             </div>
                             <DollarSign className="h-8 w-8 text-green-600" />
@@ -147,7 +190,7 @@ export function OverviewPage({ selectedHostel, occupiedRoomsCount }: OverviewPag
                                     {isLoading ? "..." : stats.pendingPayments}
                                 </p>
                                 <p className="text-xs text-orange-600 mt-1">
-                                    Cần theo dõi
+                                    Hợp đồng sắp hết hạn (30 ngày)
                                 </p>
                             </div>
                             <Clock className="h-8 w-8 text-orange-600" />

@@ -29,7 +29,7 @@ export function TenantTable({
                 <TableRow className="bg-gray-50 hover:bg-gray-50 border-b border-gray-200">
                     <TableHead className="font-semibold text-gray-900 py-4">Tên khách thuê</TableHead>
                     <TableHead className="font-semibold text-gray-900 py-4">Phòng</TableHead>
-                    <TableHead className="font-semibold text-gray-900 py-4">Địa chỉ cư trú</TableHead>
+                    <TableHead className="font-semibold text-gray-900 py-4">Email</TableHead>
                     <TableHead className="font-semibold text-gray-900 py-4">Điện thoại</TableHead>
                     <TableHead className="font-semibold text-gray-900 py-4">Thời hạn thuê</TableHead>
                     <TableHead className="font-semibold text-gray-900 py-4">Trạng thái</TableHead>
@@ -47,7 +47,7 @@ export function TenantTable({
                                 {tenant.room_number || tenant.roomNumber}
                             </Badge>
                         </TableCell>
-                        <TableCell className="max-w-xs truncate text-gray-600 py-4">{tenant.address || 'Chưa cập nhật'}</TableCell>
+                        <TableCell className="max-w-xs truncate text-gray-600 py-4">{tenant.email || 'Chưa cập nhật'}</TableCell>
                         <TableCell className="py-4">
                             <div className="flex items-center text-gray-700">
                                 {tenant.phone}

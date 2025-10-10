@@ -5,6 +5,7 @@ const BoardingHouseShowcase = lazy(() => import('../pages/boardingHouse/Boarding
 const Login = lazy(() => import('../pages/login/Login'));
 const AdminIndex = lazy(() => import('../pages/admin/AdminIndex'));
 const ManagerIndex = lazy(() => import('../pages/manager/ManagerIndex'));
+const EmployIndex = lazy(() => import('../pages/employ/EmployIndex'));
 
 
 
@@ -104,6 +105,15 @@ export const ROUTES_CONFIG = [
     isAuth: false,
     isPublic: true,
     layout: 'manager'
+  },
+  {
+    id: 'employ',
+    path: '/employ/*',
+    component: EmployIndex,
+    title: 'Employ Dashboard',
+    isAuth: false,
+    isPublic: true,
+    layout: 'employ'
   },
 
 

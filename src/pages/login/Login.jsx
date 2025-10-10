@@ -45,6 +45,9 @@ const Login = () => {
             } else if (account.role === 'quan_ly') {
                 // Điều hướng vào manager dashboard
                 navigate('/manager')
+            } else if (account.role === 'khach_thue') {
+                // Điều hướng vào employ dashboard
+                navigate('/employ')
             } else {
                 alert('Vai trò không được hỗ trợ')
             }
