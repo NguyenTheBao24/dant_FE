@@ -38,7 +38,7 @@ export function AddTenantDialog({
         selectedRoom,
         formData,
         roomInputRef,
-        
+
         // Actions
         handleRoomSelect,
         handleRoomInputChange,
@@ -76,7 +76,7 @@ export function AddTenantDialog({
                     <DialogTitle>Thêm khách thuê mới</DialogTitle>
                     <DialogDescription>Nhập thông tin khách thuê mới vào form bên dưới.</DialogDescription>
                 </DialogHeader>
-                
+
                 <div className="grid gap-4 py-4">
                     {/* Room Selection */}
                     <div className="space-y-2">
@@ -91,12 +91,12 @@ export function AddTenantDialog({
                             roomInputRef={roomInputRef}
                             onRoomInputChange={handleRoomInputChange}
                             onRoomSelect={handleRoomSelect}
-                            onFocus={() => {}} // Handled in hook
+                            onFocus={() => { }} // Handled in hook
                         />
                     </div>
 
                     {/* Tenant Form Fields */}
-                    <TenantFormFields 
+                    <TenantFormFields
                         formData={formData}
                         onFormFieldChange={handleFormFieldChange}
                     />
@@ -107,7 +107,7 @@ export function AddTenantDialog({
                     {/* Contract Information */}
                     <ContractInfo rentMonths={formData.rentMonths} />
                 </div>
-                
+
                 <div className="flex justify-end space-x-2">
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
                         Hủy

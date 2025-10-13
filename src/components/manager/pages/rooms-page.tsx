@@ -2,11 +2,11 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/card"
 import { Button } from "@/components/admin/ui/button"
 import { Badge } from "@/components/admin/ui/badge"
+import { CreateInvoiceDialog } from "@/components/manager/dialogs/CreateInvoiceDialog"
 import {
     Home,
     Users,
-    Edit,
-    Eye
+    Receipt
 } from "lucide-react"
 
 interface RoomsPageProps {
@@ -16,6 +16,8 @@ interface RoomsPageProps {
 export function RoomsPage({ selectedHostel }: RoomsPageProps) {
     const [rooms, setRooms] = useState([])
     const [isLoading, setIsLoading] = useState(true)
+    const [showCreateInvoiceDialog, setShowCreateInvoiceDialog] = useState(false)
+    const [selectedRoom, setSelectedRoom] = useState<any>(null)
 
     useEffect(() => {
         if (selectedHostel?.can_ho) {
@@ -199,15 +201,23 @@ export function RoomsPage({ selectedHostel }: RoomsPageProps) {
                                         {getStatusBadge(room.trang_thai)}
                                     </div>
 
+                                    {/* Action buttons */}
                                     <div className="flex gap-2 pt-2">
-                                        <Button size="sm" variant="outline" className="flex-1">
-                                            <Eye className="h-3 w-3 mr-1" />
-                                            Xem
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="flex-1"
+                                            disabled={room.trang_thai !== 'da_thue' && room.trang_thai !== 'occupied'}
+                                            title={room.trang_thai !== 'da_thue' && room.trang_thai !== 'occupied' ? 'Chỉ tạo hóa đơn cho phòng đã thuê' : 'Tạo hóa đơn thanh toán hàng tháng'}
+                                            onClick={() => {
+                                                setSelectedRoom(room)
+                                                setShowCreateInvoiceDialog(true)
+                                            }}
+                                        >
+                                            <Receipt className="h-3 w-3 mr-1" />
+                                            Tạo hóa đơn
                                         </Button>
-                                        <Button size="sm" variant="outline" className="flex-1">
-                                            <Edit className="h-3 w-3 mr-1" />
-                                            Sửa
-                                        </Button>
+
                                     </div>
                                 </CardContent>
                             </Card>
@@ -215,6 +225,18 @@ export function RoomsPage({ selectedHostel }: RoomsPageProps) {
                     })
                 )}
             </div>
+
+            {/* Create Invoice Dialog */}
+            <CreateInvoiceDialog
+                isOpen={showCreateInvoiceDialog}
+                onOpenChange={setShowCreateInvoiceDialog}
+                room={selectedRoom}
+                selectedHostel={selectedHostel}
+                onInvoiceCreated={() => {
+                    console.log('Invoice created successfully')
+                    // Có thể reload data hoặc thực hiện action khác
+                }}
+            />
         </div>
     )
 }

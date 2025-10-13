@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/
 import { Button } from "@/components/admin/ui/button"
 import { listHopDongByToaNha } from "@/services/hop-dong.service"
 import { AddTenantDialog } from "@/components/manager/dialogs/AddTenantDialog"
+import { EditTenantDialog } from "@/components/manager/dialogs/EditTenantDialog"
 import {
     Users,
     Search,
@@ -42,6 +43,7 @@ export function TenantsPage({ selectedHostel }: TenantsPageProps) {
     const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null)
     const [showTenantModal, setShowTenantModal] = useState(false)
     const [showAddTenantDialog, setShowAddTenantDialog] = useState(false)
+    const [showEditTenantDialog, setShowEditTenantDialog] = useState(false)
 
     useEffect(() => {
         loadTenants()
@@ -100,6 +102,12 @@ export function TenantsPage({ selectedHostel }: TenantsPageProps) {
     const handleAddTenant = async (tenantData: any) => {
         console.log('New tenant added:', tenantData)
         // Reload tenants list after adding new tenant
+        await loadTenants()
+    }
+
+    const handleUpdateTenant = async () => {
+        console.log('Tenant updated')
+        // Reload tenants list after updating tenant
         await loadTenants()
     }
 
@@ -337,17 +345,15 @@ export function TenantsPage({ selectedHostel }: TenantsPageProps) {
                                         <div className="flex items-center space-x-3">
                                             {getStatusBadge(tenant.status)}
                                             <div className="flex space-x-2">
+
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
                                                     onClick={() => {
                                                         setSelectedTenant(tenant)
-                                                        setShowTenantModal(true)
+                                                        setShowEditTenantDialog(true)
                                                     }}
                                                 >
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-                                                <Button variant="outline" size="sm">
                                                     <Edit className="h-4 w-4" />
                                                 </Button>
                                             </div>
@@ -428,7 +434,13 @@ export function TenantsPage({ selectedHostel }: TenantsPageProps) {
                                 <Button variant="outline" onClick={() => setShowTenantModal(false)}>
                                     Đóng
                                 </Button>
-                                <Button className="bg-blue-600 hover:bg-blue-700">
+                                <Button
+                                    className="bg-blue-600 hover:bg-blue-700"
+                                    onClick={() => {
+                                        setShowTenantModal(false)
+                                        setShowEditTenantDialog(true)
+                                    }}
+                                >
                                     <Edit className="h-4 w-4 mr-2" />
                                     Chỉnh sửa
                                 </Button>
@@ -437,6 +449,14 @@ export function TenantsPage({ selectedHostel }: TenantsPageProps) {
                     </div>
                 </div>
             )}
+
+            {/* Edit Tenant Dialog */}
+            <EditTenantDialog
+                isOpen={showEditTenantDialog}
+                onOpenChange={setShowEditTenantDialog}
+                tenant={selectedTenant}
+                onUpdateSuccess={handleUpdateTenant}
+            />
         </div>
     )
 }
