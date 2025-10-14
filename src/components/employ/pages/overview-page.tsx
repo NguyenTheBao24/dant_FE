@@ -1,19 +1,20 @@
-import { Card, CardContent } from "@/components/admin/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/card"
 import {
     Home,
     DollarSign,
     Calendar,
     FileText,
     AlertCircle,
-    Clock
+    Receipt
 } from "lucide-react"
 
 interface OverviewPageProps {
     userInfo: any
     userContracts: any[]
+    invoiceData?: any
 }
 
-export function OverviewPage({ userInfo, userContracts: _ }: OverviewPageProps) {
+export function OverviewPage({ userInfo, userContracts: _, invoiceData }: OverviewPageProps) {
 
     if (!userInfo) {
         return (
@@ -44,7 +45,6 @@ export function OverviewPage({ userInfo, userContracts: _ }: OverviewPageProps) 
     // Tạm thời set các giá trị = 0
     const activeContracts: any[] = []
     const totalRent = 0
-    const expiringContracts: any[] = []
 
     return (
         <div className="space-y-6">
@@ -113,17 +113,42 @@ export function OverviewPage({ userInfo, userContracts: _ }: OverviewPageProps) 
                     </CardContent>
                 </Card>
 
-                <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+                <Card className={`bg-gradient-to-br ${invoiceData?.hasUnpaidInvoice
+                    ? 'from-red-50 to-red-100 border-red-200'
+                    : 'from-green-50 to-green-100 border-green-200'
+                    }`}>
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-medium text-orange-600">Sắp hết hạn</p>
-                                <p className="text-2xl font-bold text-orange-700">{expiringContracts.length}</p>
-                                <p className="text-xs text-orange-600 mt-1">
-                                    Trong 30 ngày tới
+                                <p className={`text-sm font-medium ${invoiceData?.hasUnpaidInvoice
+                                    ? 'text-red-600'
+                                    : 'text-green-600'
+                                    }`}>
+                                    {invoiceData?.hasUnpaidInvoice ? 'Chưa thanh toán' : 'Đã thanh toán'}
+                                </p>
+                                <p className={`text-2xl font-bold ${invoiceData?.hasUnpaidInvoice
+                                    ? 'text-red-700'
+                                    : 'text-green-700'
+                                    }`}>
+                                    {invoiceData?.hasUnpaidInvoice
+                                        ? (invoiceData.unpaidInvoice?.so_tien || 0).toLocaleString('vi-VN') + '₫'
+                                        : 'Đầy đủ'
+                                    }
+                                </p>
+                                <p className={`text-xs ${invoiceData?.hasUnpaidInvoice
+                                    ? 'text-red-600'
+                                    : 'text-green-600'
+                                    } mt-1`}>
+                                    {invoiceData?.hasUnpaidInvoice
+                                        ? `Hóa đơn ${new Date(invoiceData.unpaidInvoice?.ngay_tao).toLocaleDateString('vi-VN')}`
+                                        : 'Không có hóa đơn chưa thanh toán'
+                                    }
                                 </p>
                             </div>
-                            <Clock className="h-8 w-8 text-orange-600" />
+                            <Receipt className={`h-8 w-8 ${invoiceData?.hasUnpaidInvoice
+                                ? 'text-red-600'
+                                : 'text-green-600'
+                                }`} />
                         </div>
                     </CardContent>
                 </Card>
@@ -203,14 +228,77 @@ export function OverviewPage({ userInfo, userContracts: _ }: OverviewPageProps) 
                 </Card>
             </div> */}
 
-            {/* Placeholder thay thế */}
-            <Card>
-                <CardContent className="p-12 text-center">
-                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-600 mb-2">Thông tin hợp đồng</h3>
-                    <p className="text-gray-500">Tính năng đang được phát triển</p>
-                </CardContent>
-            </Card>
+            {/* Thông tin hóa đơn chi tiết */}
+            {invoiceData?.hasUnpaidInvoice ? (
+                <Card className="border-red-200">
+                    <CardHeader>
+                        <CardTitle className="flex items-center text-lg text-red-800">
+                            <Receipt className="h-5 w-5 text-red-600 mr-2" />
+                            Hóa đơn chưa thanh toán
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <h4 className="font-semibold text-red-800">
+                                        Hóa đơn tháng {new Date(invoiceData.unpaidInvoice?.ngay_tao).toLocaleDateString('vi-VN')}
+                                    </h4>
+                                    <p className="text-sm text-red-600">
+                                        Ngày tạo: {new Date(invoiceData.unpaidInvoice?.ngay_tao).toLocaleDateString('vi-VN')}
+                                    </p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-2xl font-bold text-red-700">
+                                        {(invoiceData.unpaidInvoice?.so_tien || 0).toLocaleString('vi-VN')}₫
+                                    </p>
+                                    <p className="text-sm text-red-600">Tổng tiền</p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                <div className="text-center">
+                                    <p className="font-medium text-gray-700">Điện cũ</p>
+                                    <p className="text-red-600">{invoiceData.unpaidInvoice?.so_dien_cu || 0}</p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="font-medium text-gray-700">Điện mới</p>
+                                    <p className="text-red-600">{invoiceData.unpaidInvoice?.so_dien_moi || 0}</p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="font-medium text-gray-700">Nước cũ</p>
+                                    <p className="text-red-600">{invoiceData.unpaidInvoice?.so_nuoc_cu || 0}</p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="font-medium text-gray-700">Nước mới</p>
+                                    <p className="text-red-600">{invoiceData.unpaidInvoice?.so_nuoc_moi || 0}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            ) : (
+                <Card className="border-green-200">
+                    <CardHeader>
+                        <CardTitle className="flex items-center text-lg text-green-800">
+                            <Receipt className="h-5 w-5 text-green-600 mr-2" />
+                            Trạng thái thanh toán
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                            <div className="flex items-center justify-center mb-4">
+                                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                                    <Receipt className="h-8 w-8 text-green-600" />
+                                </div>
+                            </div>
+                            <h4 className="font-semibold text-green-800 mb-2">Đã thanh toán đầy đủ</h4>
+                            <p className="text-green-600">
+                                Không có hóa đơn chưa thanh toán. Tình trạng tài khoản của bạn đang tốt!
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
         </div>
     )
 }

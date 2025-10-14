@@ -3,9 +3,10 @@ import { FileText } from "lucide-react"
 
 interface ContractsPageProps {
     userContracts: any[]
+    invoiceData?: any
 }
 
-export function ContractsPage({ userContracts: _ }: ContractsPageProps) {
+export function ContractsPage({ userContracts: _, invoiceData }: ContractsPageProps) {
     return (
         <div className="space-y-6">
             {/* Header */}

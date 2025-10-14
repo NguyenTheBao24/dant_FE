@@ -92,13 +92,63 @@ export async function listHopDongSapHetHan(toaNhaId, days = 30) {
 
 export async function listHopDongByKhachThue(khachThueId) {
     if (!isReady()) return []
-    const { data, error } = await supabase
-        .from('hop_dong')
-        .select('*, can_ho:can_ho_id(id, so_can, toa_nha_id, gia_thue, dien_tich), toa_nha:can_ho.toa_nha_id(id, ten_toa, dia_chi, so_dien_thoai)')
-        .eq('khach_thue_id', khachThueId)
-        .order('ngay_bat_dau', { ascending: false })
-    if (error) throw error
-    return data || []
+
+    try {
+        // Lấy hợp đồng với thông tin căn hộ
+        const { data, error } = await supabase
+            .from('hop_dong')
+            .select('*, can_ho:can_ho_id(id, so_can, toa_nha_id, gia_thue, dien_tich)')
+            .eq('khach_thue_id', khachThueId)
+            .order('ngay_bat_dau', { ascending: false })
+
+        if (error) throw error
+
+        // Lấy thông tin tòa nhà và quản lý cho từng hợp đồng
+        const contractsWithToaNha = await Promise.all(
+            (data || []).map(async (contract) => {
+                if (contract.can_ho?.toa_nha_id) {
+                    try {
+                        // Lấy thông tin tòa nhà
+                        const { data: toaNha, error: toaNhaError } = await supabase
+                            .from('toa_nha')
+                            .select('id, ten_toa, dia_chi, quan_ly_id')
+                            .eq('id', contract.can_ho.toa_nha_id)
+                            .single()
+
+                        if (!toaNhaError && toaNha) {
+                            contract.toa_nha = toaNha
+
+                            // Lấy thông tin quản lý nếu có
+                            if (toaNha.quan_ly_id) {
+                                try {
+                                    const { data: quanLy, error: quanLyError } = await supabase
+                                        .from('quan_ly')
+                                        .select('id, ho_ten, sdt, email')
+                                        .eq('id', toaNha.quan_ly_id)
+                                        .single()
+
+                                    if (!quanLyError && quanLy) {
+                                        contract.toa_nha.quan_ly = quanLy
+                                        contract.toa_nha.so_dien_thoai = quanLy.sdt // Thêm số điện thoại từ quản lý
+                                    }
+                                } catch (error) {
+                                    console.error('Error fetching quan_ly for toa_nha:', toaNha.id, error)
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error fetching toa_nha for contract:', contract.id, error)
+                    }
+                }
+                return contract
+            })
+        )
+
+        return contractsWithToaNha
+    } catch (error) {
+        console.error('Error in listHopDongByKhachThue:', error)
+        throw error
+    }
 }
 
 

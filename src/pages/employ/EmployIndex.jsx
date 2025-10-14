@@ -2,12 +2,14 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { EmployDashboard } from "@/components/employ/pages/EmployDashboard"
 import { getKhachThueByTaiKhoanId } from "@/services/khach-thue.service"
-// import { listHopDongByKhachThue } from "@/services/hop-dong.service"
+import { listHopDongByKhachThue } from "@/services/hop-dong.service"
+import { getInvoiceSummaryForTenant } from "@/services/employ-invoice.service"
 
 export default function EmployIndex() {
     const navigate = useNavigate()
     const [userInfo, setUserInfo] = useState(null)
     const [userContracts, setUserContracts] = useState([])
+    const [invoiceData, setInvoiceData] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(null)
 
@@ -48,11 +50,29 @@ export default function EmployIndex() {
                 }
 
                 // Tìm các hợp đồng của khách thuê này
-                // const hopDongList = await listHopDongByKhachThue(khachThue.id)
-                // console.log('Found hop dong list:', hopDongList)
+                console.log('Loading hop dong for khach_thue_id:', khachThue.id)
+                const hopDongList = await listHopDongByKhachThue(khachThue.id)
+                console.log('Found hop dong list:', hopDongList)
+
+                // Load thông tin hóa đơn cho hợp đồng hiệu lực đầu tiên
+                let invoiceSummary = null
+                const activeContract = hopDongList.find(contract => contract.trang_thai === 'hieu_luc')
+                if (activeContract) {
+                    try {
+                        console.log('Loading invoice summary for hop_dong_id:', activeContract.id)
+                        invoiceSummary = await getInvoiceSummaryForTenant(activeContract.id)
+                        console.log('Found invoice summary:', invoiceSummary)
+                    } catch (error) {
+                        console.error('Error loading invoice summary for hop_dong_id:', activeContract.id, error)
+                        // Không throw error, chỉ log để không làm crash app
+                    }
+                } else {
+                    console.log('No active contract found for khach_thue_id:', khachThue.id)
+                }
 
                 setUserInfo(khachThue)
-                setUserContracts([]) // setUserContracts(hopDongList)
+                setUserContracts(hopDongList)
+                setInvoiceData(invoiceSummary)
 
             } catch (error) {
                 console.error('Error loading employ data:', error)
@@ -103,7 +123,8 @@ export default function EmployIndex() {
         <div className="min-h-screen bg-gray-50">
             <EmployDashboard
                 userInfo={userInfo}
-                userContracts={[]}
+                userContracts={userContracts}
+                invoiceData={invoiceData}
                 onUserInfoUpdate={handleUserInfoUpdate}
             />
         </div>

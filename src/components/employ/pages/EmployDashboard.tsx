@@ -3,15 +3,17 @@ import { useNavigate } from "react-router-dom"
 import { EmploySidebar } from "../dashboard/sidebar"
 import { OverviewPage } from "./overview-page"
 import { ContractsPage } from "./contracts-page"
+import { InvoicesPage } from "./invoices-page"
 import { ProfilePage } from "./profile-page"
 
 interface EmployDashboardProps {
     userInfo: any
     userContracts: any[]
+    invoiceData?: any
     onUserInfoUpdate?: (updatedInfo: any) => void
 }
 
-export function EmployDashboard({ userInfo, userContracts, onUserInfoUpdate }: EmployDashboardProps) {
+export function EmployDashboard({ userInfo, userContracts, invoiceData, onUserInfoUpdate }: EmployDashboardProps) {
     const navigate = useNavigate()
     const [activeTab, setActiveTab] = useState("overview")
 
@@ -34,13 +36,15 @@ export function EmployDashboard({ userInfo, userContracts, onUserInfoUpdate }: E
     const renderActiveTab = () => {
         switch (activeTab) {
             case "overview":
-                return <OverviewPage userInfo={userInfo} userContracts={userContracts} />
+                return <OverviewPage userInfo={userInfo} userContracts={userContracts} invoiceData={invoiceData} />
             case "contracts":
-                return <ContractsPage userContracts={userContracts} />
+                return <ContractsPage userContracts={userContracts} invoiceData={invoiceData} />
+            case "invoices":
+                return <InvoicesPage invoiceData={invoiceData} userContracts={userContracts} />
             case "profile":
                 return <ProfilePage userInfo={userInfo} onUserInfoUpdate={onUserInfoUpdate} />
             default:
-                return <OverviewPage userInfo={userInfo} userContracts={userContracts} />
+                return <OverviewPage userInfo={userInfo} userContracts={userContracts} invoiceData={invoiceData} />
         }
     }
 

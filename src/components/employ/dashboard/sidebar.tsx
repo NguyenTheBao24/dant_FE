@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/admin/ui/card"
 import {
     LayoutDashboard,
     FileText,
+    Receipt,
     User,
     LogOut,
     UserCircle
@@ -91,6 +92,18 @@ export function EmploySidebar({
                 >
                     <FileText className="mr-3 h-5 w-5" />
                     <span className="font-semibold">Hợp đồng</span>
+                </Button>
+
+                <Button
+                    variant={activeTab === "invoices" ? "default" : "ghost"}
+                    className={`w-full justify-start h-12 transition-all duration-300 rounded-xl ${activeTab === "invoices"
+                        ? "bg-green-600 text-white shadow-lg hover:shadow-xl"
+                        : "hover:bg-gray-100 hover:shadow-md"
+                        }`}
+                    onClick={() => onTabChange("invoices")}
+                >
+                    <Receipt className="mr-3 h-5 w-5" />
+                    <span className="font-semibold">Hóa đơn</span>
                 </Button>
 
                 <Button
