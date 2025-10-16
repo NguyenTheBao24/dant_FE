@@ -9,7 +9,8 @@ import {
     FileText,
     Settings,
     Home,
-    User
+    User,
+    Bell
 } from "lucide-react"
 
 interface ManagerSidebarProps {
@@ -111,6 +112,18 @@ export function ManagerSidebar({
                 >
                     <Home className="mr-3 h-5 w-5" />
                     <span className="font-semibold">Quản lý phòng</span>
+                </Button>
+
+                <Button
+                    variant={activeTab === "notifications" ? "default" : "ghost"}
+                    className={`w-full justify-start h-12 transition-all duration-300 rounded-xl ${activeTab === "notifications"
+                        ? "bg-blue-600 text-white shadow-lg hover:shadow-xl"
+                        : "hover:bg-gray-100 hover:shadow-md"
+                        }`}
+                    onClick={() => onTabChange("notifications")}
+                >
+                    <Bell className="mr-3 h-5 w-5" />
+                    <span className="font-semibold">Thông báo</span>
                 </Button>
 
                 <Button

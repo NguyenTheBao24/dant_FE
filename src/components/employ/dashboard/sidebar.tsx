@@ -6,7 +6,8 @@ import {
     Receipt,
     User,
     LogOut,
-    UserCircle
+    UserCircle,
+    Bell
 } from "lucide-react"
 
 interface EmploySidebarProps {
@@ -104,6 +105,18 @@ export function EmploySidebar({
                 >
                     <Receipt className="mr-3 h-5 w-5" />
                     <span className="font-semibold">Hóa đơn</span>
+                </Button>
+
+                <Button
+                    variant={activeTab === "notifications" ? "default" : "ghost"}
+                    className={`w-full justify-start h-12 transition-all duration-300 rounded-xl ${activeTab === "notifications"
+                        ? "bg-green-600 text-white shadow-lg hover:shadow-xl"
+                        : "hover:bg-gray-100 hover:shadow-md"
+                        }`}
+                    onClick={() => onTabChange("notifications")}
+                >
+                    <Bell className="mr-3 h-5 w-5" />
+                    <span className="font-semibold">Thông báo</span>
                 </Button>
 
                 <Button

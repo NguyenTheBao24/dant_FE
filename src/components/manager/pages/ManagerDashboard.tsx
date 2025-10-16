@@ -4,6 +4,7 @@ import { ManagerSidebar } from "@/components/manager/dashboard/sidebar"
 import { OverviewPage } from "@/components/manager/pages/overview-page"
 import { TenantsPage } from "@/components/manager/pages/tenants-page"
 import { RoomsPage } from "@/components/manager/pages/rooms-page"
+import { NotificationsPage } from "@/components/manager/pages/notifications-page"
 
 interface ManagerDashboardProps {
     selectedHostel?: any
@@ -49,6 +50,8 @@ export function ManagerDashboard({ selectedHostel }: ManagerDashboardProps) {
                 return <TenantsPage selectedHostel={selectedHostel} />
             case "rooms":
                 return <RoomsPage selectedHostel={selectedHostel} />
+            case "notifications":
+                return <NotificationsPage selectedHostel={selectedHostel} />
             case "contracts":
                 return (
                     <div className="flex items-center justify-center h-96">

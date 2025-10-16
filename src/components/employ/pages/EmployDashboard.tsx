@@ -5,6 +5,7 @@ import { OverviewPage } from "./overview-page"
 import { ContractsPage } from "./contracts-page"
 import { InvoicesPage } from "./invoices-page"
 import { ProfilePage } from "./profile-page"
+import { NotificationsPage } from "./notifications-page"
 
 interface EmployDashboardProps {
     userInfo: any
@@ -41,6 +42,8 @@ export function EmployDashboard({ userInfo, userContracts, invoiceData, onUserIn
                 return <ContractsPage userContracts={userContracts} invoiceData={invoiceData} />
             case "invoices":
                 return <InvoicesPage invoiceData={invoiceData} userContracts={userContracts} />
+            case "notifications":
+                return <NotificationsPage userInfo={userInfo} userContracts={userContracts} />
             case "profile":
                 return <ProfilePage userInfo={userInfo} onUserInfoUpdate={onUserInfoUpdate} />
             default:
