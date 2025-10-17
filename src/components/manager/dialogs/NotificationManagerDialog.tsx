@@ -18,7 +18,7 @@ interface NotificationManagerDialogProps {
     onOpenChange: (open: boolean) => void
     notification: any
     selectedHostel: any
-    onStatusUpdate: () => void
+    onStatusUpdate?: (id: number, newStatus: string) => void
 }
 
 export function NotificationManagerDialog({
@@ -33,7 +33,7 @@ export function NotificationManagerDialog({
         const [newResponse, setNewResponse] = useState('')
         const [isSubmitting, setIsSubmitting] = useState(false)
         const [isLoading, setIsLoading] = useState(false)
-        const [status, setStatus] = useState('')
+        const [status, setStatus] = useState(notification?.trang_thai || '')
         const [showSuccessMessage, setShowSuccessMessage] = useState(false)
         const responsesEndRef = React.useRef<HTMLDivElement>(null)
 
@@ -72,7 +72,7 @@ export function NotificationManagerDialog({
             try {
                 await updateThongBaoStatus(notification.id, newStatus)
                 setStatus(newStatus)
-                onStatusUpdate()
+                onStatusUpdate && onStatusUpdate(notification.id, newStatus)
             } catch (error) {
                 console.error('Error updating notification status:', error)
                 alert('Có lỗi xảy ra khi cập nhật trạng thái')
@@ -245,13 +245,27 @@ export function NotificationManagerDialog({
                             <CardContent>
                                 <div className="flex items-center space-x-4">
                                     <Select value={status} onValueChange={handleStatusChange}>
-                                        <SelectTrigger className="w-48">
-                                            <SelectValue placeholder="Chọn trạng thái" />
+                                        <SelectTrigger className="w-56">
+                                            <div className="flex items-center space-x-2">
+                                                {getStatusBadge(status)}
+                                            </div>
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="chua_xu_ly">Chưa xử lý</SelectItem>
-                                            <SelectItem value="dang_xu_ly">Đang xử lý</SelectItem>
-                                            <SelectItem value="da_xu_ly">Đã xử lý</SelectItem>
+                                            <SelectItem value="chua_xu_ly">
+                                                <div className="flex items-center space-x-2">
+                                                    {getStatusBadge('chua_xu_ly')}
+                                                </div>
+                                            </SelectItem>
+                                            <SelectItem value="dang_xu_ly">
+                                                <div className="flex items-center space-x-2">
+                                                    {getStatusBadge('dang_xu_ly')}
+                                                </div>
+                                            </SelectItem>
+                                            <SelectItem value="da_xu_ly">
+                                                <div className="flex items-center space-x-2">
+                                                    {getStatusBadge('da_xu_ly')}
+                                                </div>
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>

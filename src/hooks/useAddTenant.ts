@@ -11,16 +11,23 @@ import { createHopDong } from '../services/hop-dong.service'
 interface UseAddTenantProps {
     selectedHostel?: any
     onAddTenant: (payload: TenantPayload) => void
+    onContractCreated?: (data: {
+        hopDong: any
+        khachThue: any
+        room: Room
+        contractInfo: { startDate: string, endDate: string }
+        hostel?: any
+    }) => void
 }
 
-export function useAddTenant({ selectedHostel, onAddTenant }: UseAddTenantProps) {
+export function useAddTenant({ selectedHostel, onAddTenant, onContractCreated }: UseAddTenantProps) {
     const [availableRooms, setAvailableRooms] = useState<Room[]>([])
     const [isLoadingRooms, setIsLoadingRooms] = useState(false)
     const [roomSearchTerm, setRoomSearchTerm] = useState("")
     const [showRoomSuggestions, setShowRoomSuggestions] = useState(false)
     const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
     const [formData, setFormData] = useState<TenantFormData>(createInitialFormData())
-    const roomInputRef = useRef<HTMLInputElement>(null)
+    const roomInputRef = useRef<HTMLDivElement>(null)
 
     // Load available rooms when selectedHostel changes
     useEffect(() => {
@@ -162,6 +169,18 @@ export function useAddTenant({ selectedHostel, onAddTenant }: UseAddTenantProps)
             }
 
             onAddTenant(payload)
+
+            // Callback để hiển thị hợp đồng HTML
+            try {
+                onContractCreated && onContractCreated({
+                    hopDong: newHopDong,
+                    khachThue: newKhachThue,
+                    room: selectedRoom!,
+                    contractInfo,
+                    hostel: selectedHostel
+                })
+            } catch { }
+
             alert('Đã tạo hợp đồng thuê thành công!')
             resetForm()
 

@@ -67,10 +67,11 @@ export default function ManagerIndex() {
                 const canHoList = await listCanHoByToaNha(toaNha.id)
                 console.log('Found can ho list:', canHoList)
 
-                // Thêm dữ liệu phòng vào tòa nhà
+                // Thêm dữ liệu phòng và thông tin quản lý vào tòa nhà
                 const toaNhaWithRooms = {
                     ...toaNha,
-                    can_ho: canHoList
+                    can_ho: canHoList,
+                    quan_ly: quanLy // Thêm thông tin quản lý vào selectedHostel
                 }
 
                 console.log('Final toa nha with rooms:', toaNhaWithRooms)

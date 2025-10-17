@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent } from '@/components/admin/ui/card'
 import { Button } from '@/components/admin/ui/button'
 import { Badge } from '@/components/admin/ui/badge'
@@ -22,17 +22,14 @@ export function NotificationsPage({ selectedHostel }: NotificationsPageProps) {
     const [showManagerDialog, setShowManagerDialog] = useState(false)
 
     const { realtimeStatus } = useManagerNotificationRealtime(selectedHostel?.id, () => {
-        loadNotifications()
+        // Tránh reload toàn bộ danh sách để UI mượt hơn; realtime sẽ đẩy bản ghi mới
     })
 
     useEffect(() => {
         if (selectedHostel?.id) loadNotifications()
     }, [selectedHostel?.id])
 
-    useEffect(() => {
-        loadNotifications()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filterStatus])
+    // Không fetch lại khi đổi filter để tránh cảm giác reload
 
     const loadNotifications = async () => {
         if (!selectedHostel?.id) return
@@ -48,14 +45,26 @@ export function NotificationsPage({ selectedHostel }: NotificationsPageProps) {
     }
 
     const handleStatusChange = async (notificationId: number, newStatus: string) => {
+        // Optimistic update để tránh cảm giác reload
+        setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, trang_thai: newStatus } : n))
         try {
             await updateThongBaoStatus(notificationId, newStatus)
-            loadNotifications()
         } catch (error) {
             console.error('Error updating notification status:', error)
+            // revert nếu lỗi
+            setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, trang_thai: (n as any)._oldStatus || 'chua_xu_ly' } : n))
             alert('Có lỗi xảy ra khi cập nhật trạng thái')
         }
     }
+
+    const updateNotificationStatusLocal = (id: number, newStatus: string) => {
+        setNotifications(prev => prev.map(n => n.id === id ? { ...n, trang_thai: newStatus } : n))
+    }
+
+    const displayedNotifications = useMemo(() => {
+        if (filterStatus === 'all') return notifications
+        return notifications.filter((n: any) => n.trang_thai === filterStatus)
+    }, [notifications, filterStatus])
 
     const handleManageNotification = (notification: any) => {
         setSelectedNotification(notification)
@@ -159,22 +168,19 @@ export function NotificationsPage({ selectedHostel }: NotificationsPageProps) {
             </Card>
 
             {/* Notifications List */}
-            {notifications.length === 0 ? (
+            {displayedNotifications.length === 0 ? (
                 <Card>
                     <CardContent className="p-12 text-center">
                         <MessageSquare className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                         <h3 className="text-lg font-semibold text-gray-600 mb-2">Chưa có thông báo nào</h3>
                         <p className="text-gray-500">
-                            {filterStatus === 'all'
-                                ? 'Chưa có thông báo nào từ khách thuê'
-                                : `Chưa có thông báo nào với trạng thái "${filterStatus}"`
-                            }
+                            {filterStatus === 'all' ? 'Chưa có thông báo nào từ khách thuê' : `Chưa có thông báo nào với trạng thái "${filterStatus}"`}
                         </p>
                     </CardContent>
                 </Card>
             ) : (
                 <div className="space-y-4">
-                    {notifications.map((notification: any) => (
+                    {displayedNotifications.map((notification: any) => (
                         <Card key={notification.id} className="hover:shadow-md transition-shadow">
                             <CardContent className="p-6">
                                 <div className="flex items-start justify-between">
@@ -238,7 +244,7 @@ export function NotificationsPage({ selectedHostel }: NotificationsPageProps) {
                 onOpenChange={setShowManagerDialog}
                 notification={selectedNotification}
                 selectedHostel={selectedHostel}
-                onStatusUpdate={loadNotifications}
+                onStatusUpdate={updateNotificationStatusLocal}
             />
         </div>
     )

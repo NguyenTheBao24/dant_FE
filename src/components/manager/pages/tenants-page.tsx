@@ -2,14 +2,19 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/card"
 import { Button } from "@/components/admin/ui/button"
 import { listHopDongByToaNha } from "@/services/hop-dong.service"
+// @ts-ignore
+import { getInvoicesByHopDong } from "@/services/employ-invoice.service"
 import { AddTenantDialog } from "@/components/manager/dialogs/AddTenantDialog"
 import { EditTenantDialog } from "@/components/manager/dialogs/EditTenantDialog"
+import { buildContractHtml } from "@/utils/tenant.utils"
+import { generateAndDownloadPDF, generatePDFForEmail } from "@/utils/pdf.utils"
+// @ts-ignore
+import { sendContractEmail } from "@/services/email.service"
 import {
     Users,
     Search,
     Filter,
     Edit,
-    Eye,
     Phone,
     Mail,
     DollarSign,
@@ -30,6 +35,9 @@ interface Tenant {
     hopDongId: string | number
     khachThueId: string | number
     canHoId: string | number
+    invoiceStatus?: 'paid' | 'unpaid' | 'no_invoice'
+    buildingName?: string
+    contractId?: string | number
 }
 
 interface TenantsPageProps {
@@ -65,6 +73,22 @@ export function TenantsPage({ selectedHostel }: TenantsPageProps) {
             console.log('Found hop dong list:', hopDongList)
             console.log('Number of contracts found:', hopDongList.length)
 
+            // Lấy thông tin hóa đơn: có hóa đơn hay không và có hóa đơn chưa thanh toán hay không
+            const invoiceInfoList = await Promise.all(
+                hopDongList.map(async (hd: any) => {
+                    try {
+                        const allInvoices = await getInvoicesByHopDong(hd.id)
+                        const hasAny = Array.isArray(allInvoices) && allInvoices.length > 0
+                        const hasUnpaid = hasAny && allInvoices.some((inv: any) => inv.trang_thai === 'chua_tt')
+                        const status: 'paid' | 'unpaid' | 'no_invoice' = !hasAny ? 'no_invoice' : (hasUnpaid ? 'unpaid' : 'paid')
+                        return { hopDongId: hd.id, status }
+                    } catch {
+                        return { hopDongId: hd.id, status: 'no_invoice' as const }
+                    }
+                })
+            )
+            const hopDongIdToInvoiceStatus = new Map(invoiceInfoList.map(x => [x.hopDongId, x.status]))
+
             // Transform data để phù hợp với UI
             const tenantsData: Tenant[] = hopDongList.map((hopDong: any) => {
                 console.log('Processing hop dong:', hopDong)
@@ -84,7 +108,8 @@ export function TenantsPage({ selectedHostel }: TenantsPageProps) {
                     lastPayment: hopDong.ngay_thanh_toan_cuoi || hopDong.ngay_bat_dau,
                     hopDongId: hopDong.id,
                     khachThueId: hopDong.khach_thue_id,
-                    canHoId: hopDong.can_ho_id
+                    canHoId: hopDong.can_ho_id,
+                    invoiceStatus: hopDongIdToInvoiceStatus.get(hopDong.id) as 'paid' | 'unpaid'
                 }
             })
 
@@ -236,7 +261,7 @@ export function TenantsPage({ selectedHostel }: TenantsPageProps) {
                             <div>
                                 <p className="text-sm font-medium text-yellow-600">Chờ thanh toán</p>
                                 <p className="text-2xl font-bold text-yellow-700">
-                                    {isLoading ? "..." : tenants.filter(t => t.status === 'pending_payment').length}
+                                    {isLoading ? "..." : tenants.filter(t => t.invoiceStatus === 'unpaid').length}
                                 </p>
                             </div>
                             <DollarSign className="h-8 w-8 text-yellow-600" />
@@ -334,17 +359,97 @@ export function TenantsPage({ selectedHostel }: TenantsPageProps) {
                                                         {tenant.rentAmount ? tenant.rentAmount.toLocaleString('vi-VN') : 'N/A'}₫/tháng
                                                     </span>
                                                 </div>
-                                                <div className="text-sm">
-                                                    <span className="text-gray-500">Thanh toán cuối:</span>
-                                                    <span className="ml-1 font-medium">
-                                                        {tenant.lastPayment ? new Date(tenant.lastPayment).toLocaleDateString('vi-VN') : 'Chưa có'}
-                                                    </span>
+                                                <div className="text-sm flex items-center space-x-2">
+                                                    <span className="text-gray-500">Hóa đơn:</span>
+                                                    {tenant.invoiceStatus === 'no_invoice' && (
+                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                            Chưa có hóa đơn
+                                                        </span>
+                                                    )}
+                                                    {tenant.invoiceStatus === 'unpaid' && (
+                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                            Chưa thanh toán
+                                                        </span>
+                                                    )}
+                                                    {tenant.invoiceStatus === 'paid' && (
+                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                            Đã thanh toán
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
                                         <div className="flex items-center space-x-3">
                                             {getStatusBadge(tenant.status)}
                                             <div className="flex space-x-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={async () => {
+                                                        const html = buildContractHtml({
+                                                            hostelName: selectedHostel?.ten_toa || selectedHostel?.ten || selectedHostel?.name,
+                                                            roomNumber: tenant.room,
+                                                            tenantName: tenant.name,
+                                                            phone: tenant.phone,
+                                                            email: tenant.email,
+                                                            startDate: tenant.contractStart,
+                                                            rentAmount: Number(tenant.rentAmount || 0),
+                                                            contractId: tenant.contractId,
+                                                            managerName: selectedHostel?.quan_ly?.ho_ten || selectedHostel?.managerName,
+                                                            managerPhone: selectedHostel?.quan_ly?.sdt || selectedHostel?.managerPhone,
+                                                            managerEmail: selectedHostel?.quan_ly?.email || selectedHostel?.managerEmail
+                                                        })
+
+                                                        try {
+                                                            await generateAndDownloadPDF(html, `hop-dong-${tenant.name}-${tenant.room}.pdf`)
+                                                        } catch (error) {
+                                                            console.error('Error generating PDF:', error)
+                                                            alert('Có lỗi khi tạo PDF. Vui lòng thử lại.')
+                                                        }
+                                                    }}
+                                                >
+                                                    Tải PDF
+                                                </Button>
+
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={async () => {
+                                                        const html = buildContractHtml({
+                                                            hostelName: selectedHostel?.ten_toa || selectedHostel?.ten || selectedHostel?.name,
+                                                            roomNumber: tenant.room,
+                                                            tenantName: tenant.name,
+                                                            phone: tenant.phone,
+                                                            email: tenant.email,
+                                                            startDate: tenant.contractStart,
+                                                            rentAmount: Number(tenant.rentAmount || 0),
+                                                            contractId: tenant.contractId,
+                                                            managerName: selectedHostel?.quan_ly?.ho_ten || selectedHostel?.managerName,
+                                                            managerPhone: selectedHostel?.quan_ly?.sdt || selectedHostel?.managerPhone,
+                                                            managerEmail: selectedHostel?.quan_ly?.email || selectedHostel?.managerEmail
+                                                        })
+
+                                                        try {
+                                                            const { base64 } = await generatePDFForEmail(html, `hop-dong-${tenant.name}-${tenant.room}.pdf`)
+
+                                                            await sendContractEmail({
+                                                                toEmail: tenant.email,
+                                                                tenantName: tenant.name,
+                                                                contractPdfBase64: base64,
+                                                                contractId: tenant.contractId,
+                                                                hostelName: selectedHostel?.ten_toa || selectedHostel?.ten || selectedHostel?.name,
+                                                                roomNumber: tenant.room
+                                                            })
+
+                                                            alert('Đã gửi hợp đồng qua email thành công!')
+                                                        } catch (error) {
+                                                            console.error('Error sending contract email:', error)
+                                                            alert('Có lỗi khi gửi email. Vui lòng thử lại.')
+                                                        }
+                                                    }}
+                                                >
+                                                    Gửi Email
+                                                </Button>
 
                                                 <Button
                                                     variant="outline"

@@ -1,12 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/card"
 import {
-    Home,
     DollarSign,
     Calendar,
     FileText,
     AlertCircle,
     Receipt
 } from "lucide-react"
+import { buildContractHtml } from "@/utils/tenant.utils"
+import { generateAndDownloadPDF } from "@/utils/pdf.utils"
 
 interface OverviewPageProps {
     userInfo: any
@@ -14,7 +15,7 @@ interface OverviewPageProps {
     invoiceData?: any
 }
 
-export function OverviewPage({ userInfo, userContracts: _, invoiceData }: OverviewPageProps) {
+export function OverviewPage({ userInfo, userContracts, invoiceData }: OverviewPageProps) {
 
     if (!userInfo) {
         return (
@@ -28,23 +29,22 @@ export function OverviewPage({ userInfo, userContracts: _, invoiceData }: Overvi
         )
     }
 
-    // const activeContracts = userContracts.filter(contract => contract.trang_thai === 'hieu_luc')
-    // const expiredContracts = userContracts.filter(contract => contract.trang_thai === 'het_han')
-    // const totalRent = activeContracts.reduce((sum, contract) => sum + (contract.can_ho?.gia_thue || 0), 0)
+    const activeContracts = userContracts?.filter(contract => contract.trang_thai === 'hieu_luc') || []
+    const expiredContracts = userContracts?.filter(contract => contract.trang_thai === 'het_han') || []
+    const totalRent = activeContracts.reduce((sum, contract) => sum + (contract.can_ho?.gia_thue || 0), 0)
 
-    // // Tính hợp đồng sắp hết hạn (trong 30 ngày)
-    // const today = new Date()
-    // const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
+    // Tính hợp đồng sắp hết hạn (trong 30 ngày)
+    const today = new Date()
+    const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
 
-    // const expiringContracts = activeContracts.filter(contract => {
-    //     if (!contract.ngay_ket_thuc) return false
-    //     const endDate = new Date(contract.ngay_ket_thuc)
-    //     return endDate <= thirtyDaysFromNow && endDate >= today
-    // })
+    const expiringContracts = activeContracts.filter(contract => {
+        if (!contract.ngay_ket_thuc) return false
+        const endDate = new Date(contract.ngay_ket_thuc)
+        return endDate <= thirtyDaysFromNow && endDate >= today
+    })
 
-    // Tạm thời set các giá trị = 0
-    const activeContracts: any[] = []
-    const totalRent = 0
+    // Lấy hợp đồng hiệu lực đầu tiên để hiển thị thông tin
+    const currentContract = activeContracts[0]
 
     return (
         <div className="space-y-6">
@@ -73,7 +73,7 @@ export function OverviewPage({ userInfo, userContracts: _, invoiceData }: Overvi
                                 <p className="text-sm font-medium text-blue-600">Hợp đồng hiệu lực</p>
                                 <p className="text-2xl font-bold text-blue-700">{activeContracts.length}</p>
                                 <p className="text-xs text-blue-600 mt-1">
-                                    Tạm thời không có dữ liệu
+                                    {activeContracts.length > 0 ? `${activeContracts.length} hợp đồng đang hiệu lực` : 'Chưa có hợp đồng'}
                                 </p>
                             </div>
                             <FileText className="h-8 w-8 text-blue-600" />
@@ -90,7 +90,7 @@ export function OverviewPage({ userInfo, userContracts: _, invoiceData }: Overvi
                                     {totalRent.toLocaleString('vi-VN')}₫
                                 </p>
                                 <p className="text-xs text-green-600 mt-1">
-                                    Từ {activeContracts.length} hợp đồng
+                                    {activeContracts.length > 0 ? `Từ ${activeContracts.length} hợp đồng` : 'Chưa có hợp đồng'}
                                 </p>
                             </div>
                             <DollarSign className="h-8 w-8 text-green-600" />
@@ -98,17 +98,42 @@ export function OverviewPage({ userInfo, userContracts: _, invoiceData }: Overvi
                     </CardContent>
                 </Card>
 
-                <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                <Card
+                    className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 cursor-pointer hover:shadow-sm transition"
+                    onClick={async () => {
+                        const html = buildContractHtml({
+                            hostelName: currentContract?.toa_nha?.ten_toa || currentContract?.can_ho?.toa_nha?.ten_toa,
+                            roomNumber: currentContract?.can_ho?.so_can,
+                            tenantName: userInfo?.ho_ten,
+                            phone: userInfo?.sdt,
+                            email: userInfo?.email,
+                            startDate: currentContract?.ngay_bat_dau,
+                            rentAmount: currentContract?.can_ho?.gia_thue,
+                            contractId: currentContract?.id,
+                            managerName: currentContract?.toa_nha?.quan_ly?.ho_ten,
+                            managerPhone: currentContract?.toa_nha?.quan_ly?.sdt,
+                            managerEmail: currentContract?.toa_nha?.quan_ly?.email
+                        })
+
+                        try {
+                            await generateAndDownloadPDF(html, `hop-dong-${userInfo?.ho_ten}-${currentContract?.can_ho?.so_can}.pdf`)
+                        } catch (error) {
+                            console.error('Error generating PDF:', error)
+                            alert('Có lỗi khi tạo PDF. Vui lòng thử lại.')
+                        }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') (e.currentTarget as any).click()
+                    }}
+                >
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-medium text-purple-600">Phòng đang thuê</p>
-                                <p className="text-2xl font-bold text-purple-700">{activeContracts.length}</p>
-                                <p className="text-xs text-purple-600 mt-1">
-                                    {activeContracts.length > 0 ? activeContracts[0]?.can_ho?.so_can : 'Chưa có phòng'}
-                                </p>
+                                <p className="text-sm font-medium text-purple-600">Xem hợp đồng</p>
+                                <p className="text-xs text-purple-600 mt-1">Nhấn để mở hợp đồng thuê của bạn</p>
                             </div>
-                            <Home className="h-8 w-8 text-purple-600" />
                         </div>
                     </CardContent>
                 </Card>

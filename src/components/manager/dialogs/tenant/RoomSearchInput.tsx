@@ -8,7 +8,7 @@ interface RoomSearchInputProps {
     filteredRooms: Room[]
     availableRooms: Room[]
     selectedRoom: Room | null
-    roomInputRef: React.RefObject<HTMLInputElement>
+    roomInputRef: React.RefObject<HTMLDivElement | null>
     onRoomInputChange: (value: string) => void
     onRoomSelect: (room: Room) => void
     onFocus: () => void

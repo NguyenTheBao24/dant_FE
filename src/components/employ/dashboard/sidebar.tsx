@@ -84,18 +84,6 @@ export function EmploySidebar({
                 </Button>
 
                 <Button
-                    variant={activeTab === "contracts" ? "default" : "ghost"}
-                    className={`w-full justify-start h-12 transition-all duration-300 rounded-xl ${activeTab === "contracts"
-                        ? "bg-green-600 text-white shadow-lg hover:shadow-xl"
-                        : "hover:bg-gray-100 hover:shadow-md"
-                        }`}
-                    onClick={() => onTabChange("contracts")}
-                >
-                    <FileText className="mr-3 h-5 w-5" />
-                    <span className="font-semibold">Hợp đồng</span>
-                </Button>
-
-                <Button
                     variant={activeTab === "invoices" ? "default" : "ghost"}
                     className={`w-full justify-start h-12 transition-all duration-300 rounded-xl ${activeTab === "invoices"
                         ? "bg-green-600 text-white shadow-lg hover:shadow-xl"
@@ -106,6 +94,8 @@ export function EmploySidebar({
                     <Receipt className="mr-3 h-5 w-5" />
                     <span className="font-semibold">Hóa đơn</span>
                 </Button>
+
+
 
                 <Button
                     variant={activeTab === "notifications" ? "default" : "ghost"}

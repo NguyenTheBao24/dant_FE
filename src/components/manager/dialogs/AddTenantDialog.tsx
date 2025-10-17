@@ -12,7 +12,10 @@ import { AddTenantDialogProps } from "../../../types/tenant.types"
 import { useAddTenant } from "../../../hooks/useAddTenant"
 
 // Import utils
-import { validateTenantForm } from "../../../utils/tenant.utils"
+import { validateTenantForm, buildContractHtml } from "../../../utils/tenant.utils"
+import { generateAndDownloadPDF, generatePDFForEmail } from "../../../utils/pdf.utils"
+// @ts-ignore
+import { sendContractEmail } from "../../../services/email.service"
 
 // Import components
 import {
@@ -28,6 +31,45 @@ export function AddTenantDialog({
     onAddTenant,
     selectedHostel
 }: AddTenantDialogProps) {
+    const handleShowContract = async (data: any) => {
+        const { hopDong, khachThue, room, contractInfo, hostel } = data
+        const html = buildContractHtml({
+            hostelName: hostel?.ten_toa || hostel?.name,
+            roomNumber: room.room_number,
+            tenantName: khachThue.ho_ten,
+            phone: khachThue.sdt,
+            email: khachThue.email,
+            startDate: contractInfo.startDate,
+            rentAmount: Number(room.rent_amount || 0),
+            contractId: hopDong.id,
+            managerName: selectedHostel?.quan_ly?.ho_ten || selectedHostel?.managerName,
+            managerPhone: selectedHostel?.quan_ly?.sdt || selectedHostel?.managerPhone,
+            managerEmail: selectedHostel?.quan_ly?.email || selectedHostel?.managerEmail
+        })
+
+        try {
+            // Generate and download PDF
+            await generateAndDownloadPDF(html, `hop-dong-${khachThue.ho_ten}-${room.room_number}.pdf`)
+
+            // Also send via email
+            const { base64 } = await generatePDFForEmail(html, `hop-dong-${khachThue.ho_ten}-${room.room_number}.pdf`)
+
+            await sendContractEmail({
+                toEmail: khachThue.email,
+                tenantName: khachThue.ho_ten,
+                contractPdfBase64: base64,
+                contractId: hopDong.id,
+                hostelName: hostel?.ten_toa || hostel?.name,
+                roomNumber: room.room_number
+            })
+
+            alert('Đã tạo và gửi hợp đồng qua email thành công!')
+        } catch (error) {
+            console.error('Error generating/sending contract:', error)
+            alert('Có lỗi khi tạo hợp đồng. Vui lòng thử lại.')
+        }
+    }
+
     const {
         // State
         roomSearchTerm,
@@ -38,14 +80,14 @@ export function AddTenantDialog({
         selectedRoom,
         formData,
         roomInputRef,
-        
+
         // Actions
         handleRoomSelect,
         handleRoomInputChange,
         handleFormFieldChange,
         handleSave,
         resetForm
-    } = useAddTenant({ selectedHostel, onAddTenant })
+    } = useAddTenant({ selectedHostel, onAddTenant, onContractCreated: handleShowContract })
 
     const validateAndSave = async () => {
         const validation = validateTenantForm(formData, selectedRoom)
@@ -76,7 +118,7 @@ export function AddTenantDialog({
                     <DialogTitle>Thêm khách thuê mới</DialogTitle>
                     <DialogDescription>Nhập thông tin khách thuê mới vào form bên dưới.</DialogDescription>
                 </DialogHeader>
-                
+
                 <div className="grid gap-4 py-4">
                     {/* Room Selection */}
                     <div className="space-y-2">
@@ -91,12 +133,12 @@ export function AddTenantDialog({
                             roomInputRef={roomInputRef}
                             onRoomInputChange={handleRoomInputChange}
                             onRoomSelect={handleRoomSelect}
-                            onFocus={() => {}} // Handled in hook
+                            onFocus={() => { }} // Handled in hook
                         />
                     </div>
 
                     {/* Tenant Form Fields */}
-                    <TenantFormFields 
+                    <TenantFormFields
                         formData={formData}
                         onFormFieldChange={handleFormFieldChange}
                     />
@@ -107,7 +149,7 @@ export function AddTenantDialog({
                     {/* Contract Information */}
                     <ContractInfo rentMonths={formData.rentMonths} />
                 </div>
-                
+
                 <div className="flex justify-end space-x-2">
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
                         Hủy
