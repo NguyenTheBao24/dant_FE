@@ -43,14 +43,33 @@ export async function listHopDongByToaNha(toaNhaId) {
 
 export async function createHopDong(payload) {
     if (!isReady()) return null
-    const { data, error } = await supabase.from('hop_dong').insert([{
+    const insertPayload = [{
         can_ho_id: payload.can_ho_id,
         khach_thue_id: payload.khach_thue_id,
         ngay_bat_dau: payload.ngay_bat_dau,
         ngay_ket_thuc: payload.ngay_ket_thuc || null,
         trang_thai: payload.trang_thai || 'hieu_luc'
-    }]).select().single()
-    if (error) throw error
+    }]
+    const { data, error } = await supabase.from('hop_dong').insert(insertPayload).select().single()
+    if (error) {
+        // Một số cấu hình PostgREST có thể không trả representation -> fallback fetch
+        try {
+            const { data: row, error: fetchErr } = await supabase
+                .from('hop_dong')
+                .select('*')
+                .eq('can_ho_id', payload.can_ho_id)
+                .eq('khach_thue_id', payload.khach_thue_id)
+                .eq('ngay_bat_dau', payload.ngay_bat_dau)
+                .order('id', { ascending: false })
+                .limit(1)
+                .single()
+            if (fetchErr) throw error
+            try { await updateCanHo(payload.can_ho_id, { trang_thai: 'da_thue' }) } catch { }
+            return row
+        } catch (e) {
+            throw error
+        }
+    }
     try { await updateCanHo(payload.can_ho_id, { trang_thai: 'da_thue' }) } catch { }
     return data
 }

@@ -9,9 +9,10 @@ interface NotificationsPageProps {
         time: string
         type: string
     }>
+    onSelect?: (n: any) => void
 }
 
-export function NotificationsPage({ notifications }: NotificationsPageProps) {
+export function NotificationsPage({ notifications, onSelect }: NotificationsPageProps) {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -21,7 +22,7 @@ export function NotificationsPage({ notifications }: NotificationsPageProps) {
 
             <div className="grid gap-4">
                 {notifications.map((notification) => (
-                    <NotificationItem key={notification.id} notification={notification} />
+                    <NotificationItem key={notification.id} notification={notification} onClick={onSelect} />
                 ))}
             </div>
         </div>

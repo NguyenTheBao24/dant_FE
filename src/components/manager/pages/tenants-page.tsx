@@ -6,10 +6,9 @@ import { listHopDongByToaNha } from "@/services/hop-dong.service"
 import { getInvoicesByHopDong } from "@/services/employ-invoice.service"
 import { AddTenantDialog } from "@/components/manager/dialogs/AddTenantDialog"
 import { EditTenantDialog } from "@/components/manager/dialogs/EditTenantDialog"
-import { buildContractHtml } from "@/utils/tenant.utils"
-import { generateAndDownloadPDF, generatePDFForEmail } from "@/utils/pdf.utils"
+// import helpers if needed later
 // @ts-ignore
-import { sendContractEmail } from "@/services/email.service"
+import { notifyContractEmail } from "@/services/email.service"
 import {
     Users,
     Search,
@@ -70,12 +69,25 @@ export function TenantsPage({ selectedHostel }: TenantsPageProps) {
 
             // Load hợp đồng từ tòa nhà
             const hopDongList = await listHopDongByToaNha(selectedHostel.id)
+            // Deduplicate: keep latest active contract per room id
+            const latestByRoom = new Map<number, any>()
+            for (const hd of hopDongList) {
+                if (hd.trang_thai !== 'hieu_luc') continue
+                const existing = latestByRoom.get(hd.can_ho_id)
+                if (!existing) latestByRoom.set(hd.can_ho_id, hd)
+                else {
+                    const a = new Date(existing.ngay_bat_dau).getTime()
+                    const b = new Date(hd.ngay_bat_dau).getTime()
+                    if (b >= a) latestByRoom.set(hd.can_ho_id, hd)
+                }
+            }
+            const normalizedList = latestByRoom.size ? Array.from(latestByRoom.values()) : hopDongList
             console.log('Found hop dong list:', hopDongList)
             console.log('Number of contracts found:', hopDongList.length)
 
             // Lấy thông tin hóa đơn: có hóa đơn hay không và có hóa đơn chưa thanh toán hay không
             const invoiceInfoList = await Promise.all(
-                hopDongList.map(async (hd: any) => {
+                normalizedList.map(async (hd: any) => {
                     try {
                         const allInvoices = await getInvoicesByHopDong(hd.id)
                         const hasAny = Array.isArray(allInvoices) && allInvoices.length > 0
@@ -90,7 +102,7 @@ export function TenantsPage({ selectedHostel }: TenantsPageProps) {
             const hopDongIdToInvoiceStatus = new Map(invoiceInfoList.map(x => [x.hopDongId, x.status]))
 
             // Transform data để phù hợp với UI
-            const tenantsData: Tenant[] = hopDongList.map((hopDong: any) => {
+            const tenantsData: Tenant[] = normalizedList.map((hopDong: any) => {
                 console.log('Processing hop dong:', hopDong)
                 console.log('Can ho info:', hopDong.can_ho)
                 console.log('Khach thue info:', hopDong.khach_thue)
@@ -126,8 +138,20 @@ export function TenantsPage({ selectedHostel }: TenantsPageProps) {
 
     const handleAddTenant = async (tenantData: any) => {
         console.log('New tenant added:', tenantData)
-        // Reload tenants list after adding new tenant
+        // Reload list immediately for responsive UI
         await loadTenants()
+        // Optionally show a quick confirmation
+        try {
+            // @ts-ignore
+            if (window?.toast) {
+                // @ts-ignore
+                window.toast.success('Đã thêm khách thuê thành công')
+            } else {
+                // Fallback minimal notification
+                // @ts-ignore
+                if (typeof window !== 'undefined') alert('Đã thêm khách thuê thành công')
+            }
+        } catch { }
     }
 
     const handleUpdateTenant = async () => {
@@ -382,74 +406,6 @@ export function TenantsPage({ selectedHostel }: TenantsPageProps) {
                                         <div className="flex items-center space-x-3">
                                             {getStatusBadge(tenant.status)}
                                             <div className="flex space-x-2">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={async () => {
-                                                        const html = buildContractHtml({
-                                                            hostelName: selectedHostel?.ten_toa || selectedHostel?.ten || selectedHostel?.name,
-                                                            roomNumber: tenant.room,
-                                                            tenantName: tenant.name,
-                                                            phone: tenant.phone,
-                                                            email: tenant.email,
-                                                            startDate: tenant.contractStart,
-                                                            rentAmount: Number(tenant.rentAmount || 0),
-                                                            contractId: tenant.contractId,
-                                                            managerName: selectedHostel?.quan_ly?.ho_ten || selectedHostel?.managerName,
-                                                            managerPhone: selectedHostel?.quan_ly?.sdt || selectedHostel?.managerPhone,
-                                                            managerEmail: selectedHostel?.quan_ly?.email || selectedHostel?.managerEmail
-                                                        })
-
-                                                        try {
-                                                            await generateAndDownloadPDF(html, `hop-dong-${tenant.name}-${tenant.room}.pdf`)
-                                                        } catch (error) {
-                                                            console.error('Error generating PDF:', error)
-                                                            alert('Có lỗi khi tạo PDF. Vui lòng thử lại.')
-                                                        }
-                                                    }}
-                                                >
-                                                    Tải PDF
-                                                </Button>
-
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={async () => {
-                                                        const html = buildContractHtml({
-                                                            hostelName: selectedHostel?.ten_toa || selectedHostel?.ten || selectedHostel?.name,
-                                                            roomNumber: tenant.room,
-                                                            tenantName: tenant.name,
-                                                            phone: tenant.phone,
-                                                            email: tenant.email,
-                                                            startDate: tenant.contractStart,
-                                                            rentAmount: Number(tenant.rentAmount || 0),
-                                                            contractId: tenant.contractId,
-                                                            managerName: selectedHostel?.quan_ly?.ho_ten || selectedHostel?.managerName,
-                                                            managerPhone: selectedHostel?.quan_ly?.sdt || selectedHostel?.managerPhone,
-                                                            managerEmail: selectedHostel?.quan_ly?.email || selectedHostel?.managerEmail
-                                                        })
-
-                                                        try {
-                                                            const { base64 } = await generatePDFForEmail(html, `hop-dong-${tenant.name}-${tenant.room}.pdf`)
-
-                                                            await sendContractEmail({
-                                                                toEmail: tenant.email,
-                                                                tenantName: tenant.name,
-                                                                contractPdfBase64: base64,
-                                                                contractId: tenant.contractId,
-                                                                hostelName: selectedHostel?.ten_toa || selectedHostel?.ten || selectedHostel?.name,
-                                                                roomNumber: tenant.room
-                                                            })
-
-                                                            alert('Đã gửi hợp đồng qua email thành công!')
-                                                        } catch (error) {
-                                                            console.error('Error sending contract email:', error)
-                                                            alert('Có lỗi khi gửi email. Vui lòng thử lại.')
-                                                        }
-                                                    }}
-                                                >
-                                                    Gửi Email
-                                                </Button>
 
                                                 <Button
                                                     variant="outline"

@@ -18,6 +18,7 @@ export function OverviewPage({ selectedHostel, occupiedRoomsCount }: OverviewPag
         totalMonthlyRevenue,
         revenueByRoomType,
         monthlyStats,
+        currentMonthExpenses,
         tenantStats,
         roomStats,
         isLoading
@@ -94,6 +95,13 @@ export function OverviewPage({ selectedHostel, occupiedRoomsCount }: OverviewPag
                     gradient="bg-gradient-to-br from-green-100 to-green-200"
                 />
                 <StatsCard
+                    title="Chi phí tháng"
+                    value={(currentMonthExpenses || 0).toLocaleString('vi-VN') + '₫'}
+                    change={`Tính từ bảng chi_tieu`}
+                    icon={DollarSign}
+                    gradient="bg-gradient-to-br from-orange-100 to-orange-200"
+                />
+                <StatsCard
                     title="Tỷ lệ lấp đầy"
                     value={`${roomStats.occupancyRate}%`}
                     change={`${roomStats.occupied}/${roomStats.total} phòng`}
@@ -105,7 +113,7 @@ export function OverviewPage({ selectedHostel, occupiedRoomsCount }: OverviewPag
                     value={tenantStats.withAccount.toString()}
                     change={`${tenantStats.withoutAccount} chưa cấp`}
                     icon={Users}
-                    gradient="bg-gradient-to-br from-orange-100 to-orange-200"
+                    gradient="bg-gradient-to-br from-slate-100 to-slate-200"
                 />
             </div>
 

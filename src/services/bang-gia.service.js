@@ -1,12 +1,13 @@
 import { supabase } from './supabase-client'
 
-// Lấy bảng giá của một tòa nhà
-export async function getBangGiaByToaNha(toaNhaId) {
+// Lấy cấu hình bảng giá dùng chung (không phụ thuộc tòa nhà)
+export async function getBangGia() {
     try {
         const { data, error } = await supabase
             .from('bang_gia')
             .select('*')
-            .eq('id', toaNhaId)
+            .order('id', { ascending: true })
+            .limit(1)
             .single()
 
         if (error) {
@@ -16,7 +17,7 @@ export async function getBangGiaByToaNha(toaNhaId) {
 
         return data
     } catch (error) {
-        console.error('Error in getBangGiaByToaNha:', error)
+        console.error('Error in getBangGia:', error)
         throw error
     }
 }
@@ -70,7 +71,7 @@ export async function upsertBangGia(toaNhaId, bangGiaData) {
         // Kiểm tra xem đã có bảng giá chưa
         let existing = null
         try {
-            existing = await getBangGiaByToaNha(toaNhaId)
+            existing = await getBangGia()
         } catch (error) {
             // Nếu không tìm thấy, existing sẽ là null
             console.log('No existing price found, will create new')
@@ -92,4 +93,9 @@ export async function upsertBangGia(toaNhaId, bangGiaData) {
         console.error('Error in upsertBangGia:', error)
         throw error
     }
+}
+
+// Backward compatibility: API trước đây theo tòa nhà; nay trả về cấu hình chung
+export async function getBangGiaByToaNha(_toaNhaId) {
+    return await getBangGia()
 }

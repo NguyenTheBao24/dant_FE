@@ -31,6 +31,11 @@ export function AddTenantDialog({
     onAddTenant,
     selectedHostel
 }: AddTenantDialogProps) {
+    const isBackgroundRunningRef = (typeof window !== 'undefined') ? (window as any).__contract_bg_ref || { current: false } : { current: false }
+    // store ref globally to avoid strict-mode double invoke triggering twice
+    if (typeof window !== 'undefined' && !(window as any).__contract_bg_ref) {
+        ; (window as any).__contract_bg_ref = isBackgroundRunningRef
+    }
     const handleShowContract = async (data: any) => {
         const { hopDong, khachThue, room, contractInfo, hostel } = data
         const html = buildContractHtml({
@@ -47,27 +52,34 @@ export function AddTenantDialog({
             managerEmail: selectedHostel?.quan_ly?.email || selectedHostel?.managerEmail
         })
 
-        try {
-            // Generate and download PDF
-            await generateAndDownloadPDF(html, `hop-dong-${khachThue.ho_ten}-${room.room_number}.pdf`)
+        // Background: tạo PDF để tải xuống và gửi email, không chặn UI, không alert
+        setTimeout(async () => {
+            if (isBackgroundRunningRef.current) return
+            isBackgroundRunningRef.current = true
+            try {
+                // 1) Tạo và tải PDF xuống cho người quản lý
+                await generateAndDownloadPDF(
+                    html,
+                    `hop-dong-${khachThue.ho_ten}-${room.room_number}.pdf`
+                )
 
-            // Also send via email
-            const { base64 } = await generatePDFForEmail(html, `hop-dong-${khachThue.ho_ten}-${room.room_number}.pdf`)
-
-            await sendContractEmail({
-                toEmail: khachThue.email,
-                tenantName: khachThue.ho_ten,
-                contractPdfBase64: base64,
-                contractId: hopDong.id,
-                hostelName: hostel?.ten_toa || hostel?.name,
-                roomNumber: room.room_number
-            })
-
-            alert('Đã tạo và gửi hợp đồng qua email thành công!')
-        } catch (error) {
-            console.error('Error generating/sending contract:', error)
-            alert('Có lỗi khi tạo hợp đồng. Vui lòng thử lại.')
-        }
+                // 2) Tạo PDF base64 và gửi qua email cho khách thuê
+                const { base64 } = await generatePDFForEmail(
+                    html,
+                    `hop-dong-${khachThue.ho_ten}-${room.room_number}.pdf`
+                )
+                await sendContractEmail({
+                    toEmail: khachThue.email,
+                    tenantName: khachThue.ho_ten,
+                    contractPdfBase64: base64,
+                    contractId: hopDong.id,
+                    hostelName: hostel?.ten_toa || hostel?.name,
+                    roomNumber: room.room_number
+                })
+            } catch (error) {
+                console.error('Background contract email error:', error)
+            } finally { isBackgroundRunningRef.current = false }
+        }, 0)
     }
 
     const {
@@ -87,6 +99,7 @@ export function AddTenantDialog({
         handleFormFieldChange,
         handleSave,
         resetForm
+        , isSaving
     } = useAddTenant({ selectedHostel, onAddTenant, onContractCreated: handleShowContract })
 
     const validateAndSave = async () => {
@@ -96,6 +109,15 @@ export function AddTenantDialog({
             return
         }
         await handleSave()
+        // Đóng dialog ngay, hiển thị thông báo thành công nhẹ
+        onOpenChange(false)
+        try {
+            // @ts-ignore
+            if (window?.toast) {
+                // @ts-ignore
+                window.toast.success('Đã thêm khách thuê thành công')
+            }
+        } catch { }
     }
 
     const handleDialogChange = (open: boolean) => {
@@ -154,7 +176,7 @@ export function AddTenantDialog({
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
                         Hủy
                     </Button>
-                    <Button type="button" onClick={validateAndSave}>
+                    <Button type="button" onClick={validateAndSave} disabled={isSaving}>
                         Lưu khách thuê
                     </Button>
                 </div>

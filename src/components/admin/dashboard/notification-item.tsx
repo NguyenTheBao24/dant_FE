@@ -9,9 +9,10 @@ interface NotificationItemProps {
     time: string
     type: string
   }
+  onClick?: (notification: any) => void
 }
 
-export function NotificationItem({ notification }: NotificationItemProps) {
+export function NotificationItem({ notification, onClick }: NotificationItemProps) {
   const getIcon = (type: string) => {
     switch (type) {
       case "order":
@@ -28,7 +29,7 @@ export function NotificationItem({ notification }: NotificationItemProps) {
   }
 
   return (
-    <Card className="transition-all hover:shadow-md">
+    <Card className="transition-all hover:shadow-md cursor-pointer" onClick={() => onClick && onClick(notification)}>
       <CardContent className="p-6">
         <div className="flex items-start space-x-4">
           <div className="flex-shrink-0">

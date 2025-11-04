@@ -3,6 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/
 import { Button } from "@/components/admin/ui/button"
 import { Badge } from "@/components/admin/ui/badge"
 import { CreateInvoiceDialog } from "@/components/manager/dialogs/CreateInvoiceDialog"
+// @ts-ignore
+import { realtimeService } from "@/services/realtime.service"
+// @ts-ignore
+import { listCanHoByToaNha } from "@/services/can-ho.service"
 import {
     Home,
     Users,
@@ -14,20 +18,81 @@ interface RoomsPageProps {
 }
 
 export function RoomsPage({ selectedHostel }: RoomsPageProps) {
-    const [rooms, setRooms] = useState([])
+    const [rooms, setRooms] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [showCreateInvoiceDialog, setShowCreateInvoiceDialog] = useState(false)
     const [selectedRoom, setSelectedRoom] = useState<any>(null)
 
     useEffect(() => {
-        if (selectedHostel?.can_ho) {
-            setRooms(selectedHostel.can_ho)
-            setIsLoading(false)
-        } else {
-            setRooms([])
-            setIsLoading(false)
+        async function loadRooms() {
+            if (!selectedHostel?.id) {
+                setRooms([])
+                setIsLoading(false)
+                return
+            }
+            setIsLoading(true)
+            try {
+                const fresh = await listCanHoByToaNha(selectedHostel.id)
+                setRooms(fresh)
+            } catch (e) {
+                console.error('Failed to load rooms:', e)
+                setRooms(selectedHostel?.can_ho || [])
+            } finally {
+                setIsLoading(false)
+            }
         }
-    }, [selectedHostel])
+        loadRooms()
+    }, [selectedHostel?.id])
+
+    // Realtime updates: cập nhật danh sách phòng ngay khi có thay đổi
+    useEffect(() => {
+        if (!selectedHostel?.id) return
+
+        const applyRoomChange = (evt: any) => {
+            const payload = evt.new || evt.data
+            if (!payload) return
+            setRooms(prev => {
+                const idx = prev.findIndex((r: any) => r.id === payload.id)
+                if (evt.event === 'DELETE') {
+                    if (idx === -1) return prev
+                    const clone = [...prev]
+                    clone.splice(idx, 1)
+                    return clone
+                }
+                // INSERT/UPDATE
+                if (idx === -1) return [...prev, payload]
+                const clone = [...prev]
+                clone[idx] = { ...clone[idx], ...payload }
+                return clone
+            })
+        }
+
+        const chRooms = realtimeService.subscribe('can_ho', 'toa_nha_id', selectedHostel.id, applyRoomChange)
+
+        // Khi có hợp đồng mới/ cập nhật, phản ánh trạng thái phòng ngay
+        const chContracts = realtimeService.subscribeToAll('hop_dong', (evt: any) => {
+            const data = evt.new || evt.data
+            if (!data?.can_ho_id) return
+            setRooms(prev => prev.map((r: any) => {
+                if (r.id !== data.can_ho_id) return r
+                if (evt.event === 'INSERT' || (evt.event === 'UPDATE' && data.trang_thai === 'hieu_luc')) {
+                    return { ...r, trang_thai: 'da_thue' }
+                }
+                if (evt.event === 'UPDATE' && data.trang_thai !== 'hieu_luc') {
+                    return { ...r, trang_thai: 'trong' }
+                }
+                if (evt.event === 'DELETE') {
+                    return { ...r, trang_thai: 'trong' }
+                }
+                return r
+            }))
+        })
+
+        return () => {
+            try { chRooms && chRooms.unsubscribe && chRooms.unsubscribe() } catch { }
+            try { chContracts && chContracts.unsubscribe && chContracts.unsubscribe() } catch { }
+        }
+    }, [selectedHostel?.id])
 
     const getRoomType = (dienTich: number, giaThue: number) => {
         if (dienTich >= 45 || giaThue >= 6000000) {

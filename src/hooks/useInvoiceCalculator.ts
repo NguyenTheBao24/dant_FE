@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { InvoiceData, BangGia, HopDongInfo, RoomInfo } from '../types/invoice.types'
 import { calculateInvoiceAmounts, createInitialInvoiceData } from '../utils/invoice.utils'
 // @ts-ignore
-import { getBangGiaByToaNha } from '../services/bang-gia.service'
+import { getBangGia } from '../services/bang-gia.service'
 // @ts-ignore
 import { listHopDongByToaNha } from '../services/hop-dong.service'
 
@@ -28,15 +28,21 @@ export function useInvoiceCalculator({ isOpen, room, selectedHostel }: UseInvoic
     const loadData = async () => {
         setIsLoading(true)
         try {
-            // Load bảng giá
-            const bangGiaData = await getBangGiaByToaNha(selectedHostel.id)
+            // Load bảng giá dùng chung
+            const bangGiaData = await getBangGia()
             setBangGia(bangGiaData)
 
             // Load hợp đồng của phòng này
-            const hopDongList = await listHopDongByToaNha(selectedHostel.id)
-            const currentHopDong = hopDongList.find((hd: any) =>
-                hd.can_ho_id === room.id && hd.trang_thai === 'hieu_luc'
-            )
+            let currentHopDong: any = null
+            for (let attempt = 0; attempt < 3; attempt++) {
+                const hopDongList = await listHopDongByToaNha(selectedHostel.id)
+                currentHopDong = hopDongList.find((hd: any) =>
+                    hd.can_ho_id === (room?.id as any) && hd.trang_thai === 'hieu_luc'
+                )
+                if (currentHopDong) break
+                // chờ dữ liệu vừa tạo đồng bộ xong
+                await new Promise(res => setTimeout(res, 500))
+            }
             setHopDong(currentHopDong)
 
             if (currentHopDong) {

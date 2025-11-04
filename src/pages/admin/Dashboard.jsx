@@ -17,6 +17,10 @@ import { createQuanLy, updateQuanLy } from "@/services/quan-ly.service"
 import { createTaiKhoan } from "@/services/tai-khoan.service"
 import { createFixedCanHoForToaNha, countCanHoByToaNha } from "@/services/can-ho.service"
 import { listHopDongByToaNha } from "@/services/hop-dong.service"
+import { getThongBaoByToaNha } from "@/services/thong-bao.service"
+import { listHoaDonChuaThanhToanTrongThang } from "@/services/hoa-don.service"
+import { NotificationManagerDialog } from "@/components/manager/dialogs/NotificationManagerDialog"
+import { InvoiceInfoDialog } from "@/components/admin/dashboard/dialogs/InvoiceInfoDialog"
 import { deleteKhachThue, updateKhachThue } from "@/services/khach-thue.service"
 import { deleteHopDong, updateHopDong } from "@/services/hop-dong.service"
 // Removed old dashboard tables (notifications, revenue_data, expense_categories)
@@ -36,6 +40,16 @@ export default function Dashboard() {
         expenseCategories: [],
         notifications: [],
     })
+    const [dialogState, setDialogState] = useState({ open: false, kind: null, data: null })
+
+    const handleSelectNotification = (n) => {
+        // type 'order' => invoice; others => chat/manager
+        if (n?.type === 'order') {
+            setDialogState({ open: true, kind: 'invoice', data: n._source || n })
+        } else {
+            setDialogState({ open: true, kind: 'chat', data: n._source || n })
+        }
+    }
 
     // Tính tổng số phòng đã thuê = số khách thuê active của tòa nhà hiện tại
     const occupiedRoomsCount = selectedHostel
@@ -311,6 +325,42 @@ export default function Dashboard() {
         loadTenantsForHostel()
     }, [selectedHostel])
 
+    // Load notifications for admin when selectedHostel changes
+    useEffect(() => {
+        const loadNotifications = async () => {
+            if (!selectedHostel?.id) return
+            try {
+                const now = new Date()
+                const unpaid = await listHoaDonChuaThanhToanTrongThang(selectedHostel.id, now.getFullYear(), now.getMonth() + 1)
+                const tb = await getThongBaoByToaNha(selectedHostel.id)
+
+                const unpaidMapped = (unpaid || []).map((u) => ({
+                    id: `inv-${u.id}`,
+                    title: `Phòng ${u.room_number || ''} chưa thanh toán`,
+                    message: `${u.tenant_name ? u.tenant_name + ' - ' : ''}${(u.so_tien || 0).toLocaleString('vi-VN')}₫`,
+                    time: new Date(u.ngay_tao).toLocaleDateString('vi-VN'),
+                    type: 'order',
+                    _source: u,
+                }))
+
+                const tenantMapped = (tb || []).slice(0, 20).map(n => ({
+                    id: `tb-${n.id}`,
+                    title: n.tieu_de,
+                    message: n.noi_dung || '',
+                    time: new Date(n.ngay_tao).toLocaleDateString('vi-VN'),
+                    type: n.trang_thai === 'chua_xu_ly' ? 'report' : 'employee',
+                    _source: n,
+                }))
+
+                setChartData(prev => ({ ...prev, notifications: [...unpaidMapped, ...tenantMapped] }))
+            } catch (e) {
+                console.error('Failed to load notifications:', e)
+                setChartData(prev => ({ ...prev, notifications: [] }))
+            }
+        }
+        loadNotifications()
+    }, [selectedHostel?.id])
+
     const handleManagerAction = async (action, manager) => {
         switch (action) {
             case "contact":
@@ -482,7 +532,7 @@ export default function Dashboard() {
             case "analytics":
                 return <AnalyticsPage chartData={chartData} />
             case "notifications":
-                return <NotificationsPage notifications={chartData.notifications} />
+                return <NotificationsPage notifications={chartData.notifications} onSelect={(n) => handleSelectNotification(n)} />
             case "add-hostel":
                 return (
                     <AddHostelPage
@@ -609,8 +659,18 @@ export default function Dashboard() {
                     </div>
                 </main>
             </div>
-
-
+            {/* Dialogs for notifications */}
+            <NotificationManagerDialog
+                isOpen={dialogState.open && dialogState.kind === 'chat'}
+                onOpenChange={(o) => setDialogState(prev => ({ ...prev, open: o }))}
+                notification={dialogState.data}
+                selectedHostel={selectedHostel}
+            />
+            <InvoiceInfoDialog
+                isOpen={dialogState.open && dialogState.kind === 'invoice'}
+                onOpenChange={(o) => setDialogState(prev => ({ ...prev, open: o }))}
+                invoice={dialogState.data}
+            />
         </div>
     )
 }

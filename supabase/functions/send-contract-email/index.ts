@@ -1,8 +1,5 @@
 // @ts-ignore
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-// @ts-ignore
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // @ts-ignore
 declare const Deno: any
 
@@ -18,92 +15,55 @@ serve(async (req) => {
     }
 
     try {
-        const { toEmail, tenantName, contractPdfBase64, contractId, hostelName, roomNumber, subject, message } = await req.json()
+        const data = await req.json();
 
-        // Create Supabase client
-        const supabaseClient = createClient(
-            Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-            {
-                global: {
-                    headers: { Authorization: req.headers.get('Authorization')! },
-                },
-            }
-        )
+        const brevoApiKey = Deno.env.get("BREVO_API_KEY");
+        if (!brevoApiKey) throw new Error("Missing BREVO_API_KEY");
 
-        // Send email using Resend
-        const resendApiKey = Deno.env.get('RESEND_API_KEY')
-        if (!resendApiKey) {
-            throw new Error('RESEND_API_KEY not found')
-        }
+        // Không gửi file đính kèm nữa, chỉ gửi thông báo
 
-        const emailResponse = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
+        const fromEmail = Deno.env.get('EMAIL_FROM') || 'noreply@thebao.dev'
+        const emailPayload = {
+            sender: { email: fromEmail, name: "KTX TheBao" },
+            to: [{ email: data.toEmail, name: data.tenantName }],
+            subject: data.subject || "Hợp đồng thuê phòng",
+            htmlContent: `
+        <p>Xin chào ${data.tenantName},</p>
+        <p>${data.message}</p>
+        <p>Trân trọng,<br>KTX TheBao</p>
+      `,
+            textContent: `Xin chào ${data.tenantName},\n\n${data.message}\n\nTrân trọng,\nKTX TheBao`,
+            // Không đính kèm file
+        };
+
+        const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+            method: "POST",
             headers: {
-                'Authorization': `Bearer ${resendApiKey}`,
-                'Content-Type': 'application/json',
+                accept: "application/json",
+                "content-type": "application/json",
+                "api-key": brevoApiKey,
             },
-            body: JSON.stringify({
-                from: 'noreply@yourdomain.com', // Replace with your verified domain
-                to: [toEmail],
-                subject: subject || `Hợp đồng thuê phòng - ${hostelName} - Phòng ${roomNumber}`,
-                html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #2563eb;">Hợp đồng thuê phòng</h2>
-            <p>Kính gửi <strong>${tenantName}</strong>,</p>
-            <p>${message || `Vui lòng tìm đính kèm hợp đồng thuê phòng của bạn.`}</p>
-            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              <h3 style="margin-top: 0; color: #374151;">Chi tiết hợp đồng:</h3>
-              <ul style="margin: 0; padding-left: 20px;">
-                <li><strong>Khu trọ:</strong> ${hostelName}</li>
-                <li><strong>Phòng:</strong> ${roomNumber}</li>
-                <li><strong>Mã hợp đồng:</strong> ${contractId}</li>
-                <li><strong>Ngày tạo:</strong> ${new Date().toLocaleDateString('vi-VN')}</li>
-              </ul>
-            </div>
-            <p>Trân trọng,<br>Quản lý khu trọ</p>
-          </div>
-        `,
-                attachments: [
-                    {
-                        filename: `hop-dong-${tenantName}-${roomNumber}.pdf`,
-                        content: contractPdfBase64,
-                        type: 'application/pdf',
-                    },
-                ],
-            }),
-        })
+            body: JSON.stringify(emailPayload),
+        });
 
-        if (!emailResponse.ok) {
-            const errorData = await emailResponse.text()
-            throw new Error(`Email sending failed: ${errorData}`)
+        const result = await response.json();
+
+        if (!response.ok) {
+            console.error("Brevo error:", result);
+            return new Response(
+                JSON.stringify({ success: false, error: `Brevo failed: ${JSON.stringify(result)}` }),
+                { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+            );
         }
 
-        const emailResult = await emailResponse.json()
-
-        return new Response(
-            JSON.stringify({
-                success: true,
-                message: 'Contract email sent successfully',
-                emailId: emailResult.id
-            }),
-            {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 200,
-            }
-        )
-
+        return new Response(JSON.stringify({ success: true, result }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
     } catch (error) {
-        console.error('Error sending contract email:', error)
+        console.error(error);
         return new Response(
-            JSON.stringify({
-                success: false,
-                error: error.message
-            }),
-            {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 500,
-            }
-        )
+            JSON.stringify({ success: false, error: error.message }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+        );
     }
-})
+});

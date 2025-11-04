@@ -126,10 +126,15 @@ export function SendNotificationDialog({
                             value={formData.loai_thong_bao}
                             onValueChange={(value) => handleInputChange('loai_thong_bao', value)}
                         >
-                            <SelectTrigger>
+                            <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Chọn loại thông báo" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent
+                                position="popper"
+                                align="start"
+                                sideOffset={4}
+                                className="z-50 min-w-[var(--radix-select-trigger-width)] w-[var(--radix-select-trigger-width)]"
+                            >
                                 <SelectItem value="sua_chua">Sửa chữa</SelectItem>
                                 <SelectItem value="phan_anh">Phản ánh</SelectItem>
                                 <SelectItem value="khac">Khác</SelectItem>

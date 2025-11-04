@@ -128,29 +128,6 @@ export function ManagerSidebar({
 
 
 
-                <Button
-                    variant={activeTab === "reports" ? "default" : "ghost"}
-                    className={`w-full justify-start h-12 transition-all duration-300 rounded-xl ${activeTab === "reports"
-                        ? "bg-blue-600 text-white shadow-lg hover:shadow-xl"
-                        : "hover:bg-gray-100 hover:shadow-md"
-                        }`}
-                    onClick={() => onTabChange("reports")}
-                >
-                    <DollarSign className="mr-3 h-5 w-5" />
-                    <span className="font-semibold">Báo cáo</span>
-                </Button>
-
-                <Button
-                    variant={activeTab === "settings" ? "default" : "ghost"}
-                    className={`w-full justify-start h-12 transition-all duration-300 rounded-xl ${activeTab === "settings"
-                        ? "bg-blue-600 text-white shadow-lg hover:shadow-xl"
-                        : "hover:bg-gray-100 hover:shadow-md"
-                        }`}
-                    onClick={() => onTabChange("settings")}
-                >
-                    <Settings className="mr-3 h-5 w-5" />
-                    <span className="font-semibold">Cài đặt</span>
-                </Button>
             </div>
 
             {/* Logout Button */}

@@ -11,9 +11,10 @@ export async function getCurrentMonthInvoice(hopDongId, year, month) {
     if (!isReady()) return null
 
     try {
-        // Tạo ngày đầu và cuối tháng
+        // Tạo ngày đầu và cuối tháng (chính xác số ngày trong tháng)
         const startDate = `${year}-${String(month).padStart(2, '0')}-01`
-        const endDate = `${year}-${String(month).padStart(2, '0')}-31`
+        const lastDay = new Date(year, month, 0).getDate() // month is 1-based here
+        const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
 
         const { data, error } = await supabase
             .from('hoa_don')

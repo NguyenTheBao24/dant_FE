@@ -80,3 +80,40 @@ export async function sendNotificationEmail({
         throw error
     }
 }
+
+/**
+ * Notify contract email without PDF attachment (uses send-contract-email function)
+ */
+export async function notifyContractEmail({
+    toEmail,
+    tenantName,
+    subject,
+    message,
+    contractId,
+}) {
+    if (!isReady()) {
+        throw new Error('Supabase not configured')
+    }
+
+    try {
+        const { data, error } = await supabase.functions.invoke('send-contract-email', {
+            body: {
+                toEmail,
+                tenantName,
+                subject: subject || 'Thông báo hợp đồng thuê phòng',
+                message: message || 'Hợp đồng của bạn đã được tạo thành công.',
+                contractId: contractId || null,
+            }
+        })
+
+        if (error) {
+            console.error('Error notifying contract email:', error)
+            throw error
+        }
+
+        return data
+    } catch (error) {
+        console.error('Error in notifyContractEmail:', error)
+        throw error
+    }
+}

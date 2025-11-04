@@ -52,14 +52,105 @@ export async function tinhDoanhThuThang(toaNhaId, year, month) {
     const endMonth = month === 12 ? 1 : month + 1
     const endYear = month === 12 ? year + 1 : year
     const end = `${endYear}-${String(endMonth).padStart(2, '0')}-01`
+
+    // Lấy danh sách hop_dong_id của tòa nhà
+    const { data: rooms, error: roomErr } = await supabase
+        .from('can_ho')
+        .select('id')
+        .eq('toa_nha_id', toaNhaId)
+    if (roomErr) throw roomErr
+    const roomIds = (rooms || []).map(r => r.id)
+    if (roomIds.length === 0) return 0
+    const { data: contracts, error: hdErr } = await supabase
+        .from('hop_dong')
+        .select('id')
+        .in('can_ho_id', roomIds)
+    if (hdErr) throw hdErr
+    const hopDongIds = (contracts || []).map(h => h.id)
+    if (hopDongIds.length === 0) return 0
+
     const { data, error } = await supabase
         .from('hoa_don')
-        .select('so_tien, hop_dong:hop_dong_id(can_ho:can_ho_id(toa_nha_id))')
+        .select('so_tien, hop_dong_id')
         .gte('ngay_tao', start)
         .lt('ngay_tao', end)
-        .eq('hop_dong.can_ho.toa_nha_id', toaNhaId)
+        .in('hop_dong_id', hopDongIds)
     if (error) throw error
     return (data || []).reduce((sum, r) => sum + (r.so_tien || 0), 0)
+}
+
+export async function countHoaDonChuaThanhToanTrongThang(toaNhaId, year, month) {
+    if (!isReady()) return 0
+    const start = `${year}-${String(month).padStart(2, '0')}-01`
+    const endMonth = month === 12 ? 1 : month + 1
+    const endYear = month === 12 ? year + 1 : year
+    const end = `${endYear}-${String(endMonth).padStart(2, '0')}-01`
+
+    // Lấy danh sách hop_dong_id của tòa nhà
+    const { data: rooms, error: roomErr } = await supabase
+        .from('can_ho')
+        .select('id')
+        .eq('toa_nha_id', toaNhaId)
+    if (roomErr) throw roomErr
+    const roomIds = (rooms || []).map(r => r.id)
+    if (roomIds.length === 0) return 0
+    const { data: contracts, error: hdErr } = await supabase
+        .from('hop_dong')
+        .select('id')
+        .in('can_ho_id', roomIds)
+    if (hdErr) throw hdErr
+    const hopDongIds = (contracts || []).map(h => h.id)
+    if (hopDongIds.length === 0) return 0
+
+    const { count, error } = await supabase
+        .from('hoa_don')
+        .select('id', { count: 'exact', head: true })
+        .gte('ngay_tao', start)
+        .lt('ngay_tao', end)
+        .eq('trang_thai', 'chua_tt')
+        .in('hop_dong_id', hopDongIds)
+    if (error) throw error
+    return count || 0
+}
+
+export async function listHoaDonChuaThanhToanTrongThang(toaNhaId, year, month) {
+    if (!isReady()) return []
+    const start = `${year}-${String(month).padStart(2, '0')}-01`
+    const endMonth = month === 12 ? 1 : month + 1
+    const endYear = month === 12 ? year + 1 : year
+    const end = `${endYear}-${String(endMonth).padStart(2, '0')}-01`
+
+    const { data: rooms, error: roomErr } = await supabase
+        .from('can_ho')
+        .select('id, so_can')
+        .eq('toa_nha_id', toaNhaId)
+    if (roomErr) throw roomErr
+    const roomIdToSoCan = new Map((rooms || []).map(r => [r.id, r.so_can]))
+    const roomIds = (rooms || []).map(r => r.id)
+    if (roomIds.length === 0) return []
+    const { data: contracts, error: hdErr } = await supabase
+        .from('hop_dong')
+        .select('id, can_ho_id, khach_thue:khach_thue_id(ho_ten)')
+        .in('can_ho_id', roomIds)
+    if (hdErr) throw hdErr
+    const hopDongIds = (contracts || []).map(h => h.id)
+    if (hopDongIds.length === 0) return []
+
+    const { data, error } = await supabase
+        .from('hoa_don')
+        .select('id, so_tien, trang_thai, ngay_tao, hop_dong_id')
+        .gte('ngay_tao', start)
+        .lt('ngay_tao', end)
+        .eq('trang_thai', 'chua_tt')
+        .in('hop_dong_id', hopDongIds)
+    if (error) throw error
+
+    const ctMap = new Map((contracts || []).map(c => [c.id, c]))
+    return (data || []).map(inv => {
+        const ct = ctMap.get(inv.hop_dong_id)
+        const soCan = ct ? roomIdToSoCan.get(ct.can_ho_id) : undefined
+        return { ...inv, room_number: soCan, tenant_name: ct?.khach_thue?.ho_ten }
+    })
 }
 
 

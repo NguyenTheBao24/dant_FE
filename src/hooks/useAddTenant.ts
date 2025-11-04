@@ -28,6 +28,7 @@ export function useAddTenant({ selectedHostel, onAddTenant, onContractCreated }:
     const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
     const [formData, setFormData] = useState<TenantFormData>(createInitialFormData())
     const roomInputRef = useRef<HTMLDivElement>(null)
+    const [isSaving, setIsSaving] = useState(false)
 
     // Load available rooms when selectedHostel changes
     useEffect(() => {
@@ -114,6 +115,8 @@ export function useAddTenant({ selectedHostel, onAddTenant, onContractCreated }:
 
     // Handle save tenant
     const handleSave = async () => {
+        if (isSaving) return
+        setIsSaving(true)
         try {
             // Create tenant data
             const khachThueData: any = {
@@ -181,13 +184,15 @@ export function useAddTenant({ selectedHostel, onAddTenant, onContractCreated }:
                 })
             } catch { }
 
-            alert('Đã tạo hợp đồng thuê thành công!')
+            // Thành công: reset form, không chặn UI bằng alert
             resetForm()
 
         } catch (error) {
             console.error('Failed to create rental contract:', error)
             const errorMessage = getErrorMessage(error)
             alert(errorMessage)
+        } finally {
+            setIsSaving(false)
         }
     }
 
@@ -207,6 +212,7 @@ export function useAddTenant({ selectedHostel, onAddTenant, onContractCreated }:
         handleRoomInputChange,
         handleFormFieldChange,
         handleSave,
-        resetForm
+        resetForm,
+        isSaving
     }
 }
