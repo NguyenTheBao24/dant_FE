@@ -1,12 +1,16 @@
 import { useState, useEffect } from "react"
 import { listCanHoByToaNha, determineRoomType } from "@/services/can-ho.service"
 import { listHopDongByToaNha } from "@/services/hop-dong.service"
+import { aggregateExpensesByMonth, getCurrentMonthExpenses } from "@/utils/expenses.utils"
+import { aggregateRevenueByMonth, buildMonthlyStats } from "@/utils/revenue.utils"
+import { currentYearMonth } from "@/utils/months.utils"
 
 export function useOverviewData(selectedHostel, occupiedRoomsCount) {
     const [roomRevenues, setRoomRevenues] = useState([])
     const [totalMonthlyRevenue, setTotalMonthlyRevenue] = useState(0)
     const [revenueByRoomType, setRevenueByRoomType] = useState([])
     const [monthlyStats, setMonthlyStats] = useState([])
+    const [currentMonthExpenses, setCurrentMonthExpenses] = useState(0)
     const [tenantStats, setTenantStats] = useState({
         total: 0,
         active: 0,
@@ -177,58 +181,51 @@ export function useOverviewData(selectedHostel, occupiedRoomsCount) {
 
                 setRevenueByRoomType(Object.values(revenueByType))
 
-                // Tạo dữ liệu thống kê hàng tháng (12 tháng gần nhất) dựa trên dữ liệu thực
-                const monthlyStatsData = []
-                const currentDate = new Date()
-
-                for (let i = 11; i >= 0; i--) {
-                    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1)
-                    const monthName = date.toLocaleDateString('vi-VN', { month: 'short' })
-
-                    // Tính doanh thu thực cho tháng này dựa trên hợp đồng hiệu lực trong tháng đó
-                    let monthlyRevenue = 0
-                    const targetMonth = date.getMonth() + 1
-                    const targetYear = date.getFullYear()
-
-                    // Tính doanh thu từ các hợp đồng đang hiệu lực trong tháng này
-                    activeContracts.forEach((contract) => {
-                        const startDate = new Date(contract.ngay_bat_dau)
-                        const endDate = contract.ngay_ket_thuc ? new Date(contract.ngay_ket_thuc) : new Date()
-
-                        // Kiểm tra xem hợp đồng có hiệu lực trong tháng này không
-                        const contractStartMonth = startDate.getMonth() + 1
-                        const contractStartYear = startDate.getFullYear()
-                        const contractEndMonth = endDate.getMonth() + 1
-                        const contractEndYear = endDate.getFullYear()
-
-                        // Nếu hợp đồng bắt đầu trước hoặc trong tháng này và kết thúc sau hoặc trong tháng này
-                        if ((contractStartYear < targetYear || (contractStartYear === targetYear && contractStartMonth <= targetMonth)) &&
-                            (contractEndYear > targetYear || (contractEndYear === targetYear && contractEndMonth >= targetMonth))) {
-                            const room = contract.can_ho
-                            if (room && room.gia_thue) {
-                                monthlyRevenue += room.gia_thue
-                            }
-                        }
-                    })
-
-                    // Nếu không có doanh thu thực (tháng trong tương lai), sử dụng doanh thu hiện tại
-                    if (i === 0 && monthlyRevenue === 0) {
-                        monthlyRevenue = totalRevenue
-                    }
-
-                    // Tính chi phí dựa trên doanh thu và chi phí cố định
-                    const fixedCosts = Math.round(totalRooms * 500000) // Chi phí cố định: 500k/phòng/tháng
-                    const variableCosts = Math.round(monthlyRevenue * 0.15) // Chi phí biến đổi: 15% doanh thu
-                    const monthlyExpenses = fixedCosts + variableCosts
-
-                    monthlyStatsData.push({
-                        month: monthName,
-                        revenue: Math.round(monthlyRevenue),
-                        expenses: monthlyExpenses,
-                        profit: Math.round(monthlyRevenue - monthlyExpenses),
-                        occupancy: roomStatsData.occupancyRate
-                    })
+                // === Doanh thu & Chi tiêu theo tháng dựa trên dữ liệu thực tế ===
+                // 1) Lấy toàn bộ chi tiêu của tòa nhà và gom theo YYYY-MM
+                let allExpenses = []
+                try {
+                    const { listChiTieuByToaNha } = await import("@/services/chi-tieu.service")
+                    allExpenses = await listChiTieuByToaNha(selectedHostel.id)
+                } catch (e) {
+                    console.error('Error loading expenses:', e)
                 }
+
+                const expensesByMonthMap = aggregateExpensesByMonth(allExpenses)
+
+                // Tính chi phí tháng hiện tại để hiển thị thẻ "Chi phí tháng" theo YYYY-MM
+                try { setCurrentMonthExpenses(getCurrentMonthExpenses(allExpenses)) } catch { }
+
+                // 2) Doanh thu theo tháng: duyệt tất cả hợp đồng theo từng tháng hiệu lực
+                const revenueByMonthMap = aggregateRevenueByMonth(hostelContracts, true)
+
+                // 3) Dựng mảng thống kê 12 tháng gần nhất
+                const monthlyStatsData = buildMonthlyStats(
+                    revenueByMonthMap,
+                    expensesByMonthMap,
+                    roomStatsData.occupancyRate,
+                    currentYearMonth()
+                )
+
+                // 4) Debug for toa_nha_id = 38
+                if (Number(selectedHostel.id) === 38) {
+                    try {
+                        console.log('[DEBUG][toa_nha_id=38][JS] Raw chi_tieu rows:', allExpenses.length)
+                        console.table((allExpenses || []).map((e) => ({
+                            id: e.id,
+                            toa_nha_id: e.toa_nha_id,
+                            ngay: String(e.ngay || '').slice(0, 10),
+                            ym: String(e.ngay || '').slice(0, 7),
+                            so_tien: e.so_tien,
+                            loai_chi: e.loai_chi
+                        })))
+                        console.log('[DEBUG][toa_nha_id=38][JS] expensesByMonthMap:', expensesByMonthMap)
+                        console.log('[DEBUG][toa_nha_id=38][JS] revenueByMonthMap:', revenueByMonthMap)
+                        // Keys và 12 tháng cuối cùng nay được tính trong buildMonthlyStats
+                        console.table(monthlyStatsData.map((d) => ({ month: d.month, revenue: d.revenue, expenses: d.expenses, profit: d.profit })))
+                    } catch { }
+                }
+
                 setMonthlyStats(monthlyStatsData)
 
             } catch (error) {
@@ -246,6 +243,7 @@ export function useOverviewData(selectedHostel, occupiedRoomsCount) {
         totalMonthlyRevenue,
         revenueByRoomType,
         monthlyStats,
+        currentMonthExpenses,
         tenantStats,
         roomStats,
         isLoading
