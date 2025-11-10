@@ -20,21 +20,36 @@ serve(async (req) => {
         const brevoApiKey = Deno.env.get("BREVO_API_KEY");
         if (!brevoApiKey) throw new Error("Missing BREVO_API_KEY");
 
-        // Không gửi file đính kèm nữa, chỉ gửi thông báo
-
         const fromEmail = Deno.env.get('EMAIL_FROM') || 'noreply@thebao.dev'
-        const emailPayload = {
+
+        // Prepare email payload
+        const emailPayload: any = {
             sender: { email: fromEmail, name: "KTX TheBao" },
             to: [{ email: data.toEmail, name: data.tenantName }],
             subject: data.subject || "Hợp đồng thuê phòng",
             htmlContent: `
         <p>Xin chào ${data.tenantName},</p>
         <p>${data.message}</p>
+        <p>Vui lòng xem file đính kèm để xem chi tiết hợp đồng.</p>
         <p>Trân trọng,<br>KTX TheBao</p>
       `,
-            textContent: `Xin chào ${data.tenantName},\n\n${data.message}\n\nTrân trọng,\nKTX TheBao`,
-            // Không đính kèm file
+            textContent: `Xin chào ${data.tenantName},\n\n${data.message}\n\nVui lòng xem file đính kèm để xem chi tiết hợp đồng.\n\nTrân trọng,\nKTX TheBao`,
         };
+
+        // Add PDF attachment if provided
+        if (data.contractPdfBase64) {
+            const filename = `hop-dong-${data.contractId || 'contract'}.pdf`
+            emailPayload.attachment = [
+                {
+                    name: filename,
+                    content: data.contractPdfBase64
+                }
+            ]
+
+            // Log attachment size for debugging
+            const attachmentSizeKB = (data.contractPdfBase64.length * 3 / 4 / 1024).toFixed(2)
+            console.log(`Attaching PDF: ${filename}, size: ${attachmentSizeKB} KB`)
+        }
 
         const response = await fetch("https://api.brevo.com/v3/smtp/email", {
             method: "POST",

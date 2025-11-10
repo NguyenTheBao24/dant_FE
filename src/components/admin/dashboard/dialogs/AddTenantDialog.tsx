@@ -10,6 +10,11 @@ import { Plus } from "lucide-react"
 import { listAvailableCanHoByToaNha, updateCanHoTrangThai, determineRoomType } from "@/services/can-ho.service"
 import { createKhachThue } from "@/services/khach-thue.service"
 import { createHopDong } from "@/services/hop-dong.service"
+import { getToaNhaById } from "@/services/toa-nha.service"
+import { buildContractHtml } from "@/utils/tenant.utils"
+import { generateAndDownloadPDF, generatePDFForEmail } from "@/utils/pdf.utils"
+// @ts-ignore
+import { sendContractEmail } from "@/services/email.service"
 
 interface AddTenantDialogProps {
     isOpen: boolean
@@ -186,6 +191,60 @@ export function AddTenantDialog({
             })
 
             alert('Đã tạo hợp đồng thuê thành công!')
+
+            // Background: tạo PDF và gửi email hợp đồng (không chặn UI)
+            if (email && email.trim()) {
+                setTimeout(async () => {
+                    try {
+                        // Lấy thông tin tòa nhà đầy đủ với quản lý
+                        const toaNha = selectedHostel?.id
+                            ? await getToaNhaById(selectedHostel.id)
+                            : selectedHostel
+
+                        // Tạo HTML hợp đồng
+                        const html = buildContractHtml({
+                            hostelName: toaNha?.ten_toa || toaNha?.name || selectedHostel?.name || 'Khu trọ',
+                            roomNumber: selectedRoom.room_number,
+                            tenantName: name,
+                            phone: phone,
+                            email: email,
+                            startDate: startDate,
+                            endDate: endDate,
+                            rentAmount: selectedRoom.rent_amount || 0,
+                            contractId: newHopDong.id,
+                            managerName: toaNha?.quan_ly?.ho_ten || selectedHostel?.manager?.name || 'Quản lý',
+                            managerPhone: toaNha?.quan_ly?.sdt || selectedHostel?.manager?.phone || '',
+                            managerEmail: toaNha?.quan_ly?.email || selectedHostel?.manager?.email || ''
+                        })
+
+                        // 1) Tạo và tải PDF xuống cho admin
+                        await generateAndDownloadPDF(
+                            html,
+                            `hop-dong-${name}-${selectedRoom.room_number}.pdf`
+                        )
+
+                        // 2) Tạo PDF base64 (đã được tối ưu kích thước) và gửi qua email cho khách thuê
+                        const { base64 } = await generatePDFForEmail(
+                            html,
+                            `hop-dong-${name}-${selectedRoom.room_number}.pdf`
+                        )
+
+                        await sendContractEmail({
+                            toEmail: email.trim(),
+                            tenantName: name,
+                            contractPdfBase64: base64,
+                            contractId: newHopDong.id,
+                            hostelName: toaNha?.ten_toa || toaNha?.name || selectedHostel?.name || 'Khu trọ',
+                            roomNumber: selectedRoom.room_number
+                        })
+
+                        console.log('Contract PDF sent via email successfully')
+                    } catch (error) {
+                        console.error('Error sending contract email:', error)
+                        // Không hiển thị alert để không làm gián đoạn UX
+                    }
+                }, 500) // Delay 500ms để không chặn UI
+            }
         } catch (error) {
             console.error('Failed to create rental contract:', error)
 

@@ -4,7 +4,7 @@ import html2canvas from 'html2canvas'
 /**
  * Convert HTML content to PDF and download
  */
-export async function generatePDFFromHTML(htmlContent: string, filename: string = 'hop-dong-thue-phong.pdf'): Promise<Blob> {
+export async function generatePDFFromHTML(htmlContent: string, filename: string = 'hop-dong-thue-phong.pdf', options: { forEmail?: boolean } = {}): Promise<Blob> {
     // Create a temporary container
     const tempContainer = document.createElement('div')
     tempContainer.innerHTML = htmlContent
@@ -16,18 +16,25 @@ export async function generatePDFFromHTML(htmlContent: string, filename: string 
     document.body.appendChild(tempContainer)
 
     try {
+        // For email: use lower scale and JPEG compression to reduce file size
+        // For download: use higher quality
+        const scale = options.forEmail ? 1.5 : 2
+        const imageFormat = options.forEmail ? 'image/jpeg' : 'image/png'
+        const imageQuality = options.forEmail ? 0.75 : 1.0
+
         // Convert HTML to canvas
         const canvas = await html2canvas(tempContainer, {
-            scale: 2, // Higher quality
+            scale: scale,
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#ffffff',
             width: 800,
-            height: tempContainer.scrollHeight
+            height: tempContainer.scrollHeight,
+            logging: false // Disable logging for better performance
         })
 
         // Create PDF
-        const imgData = canvas.toDataURL('image/png')
+        const imgData = canvas.toDataURL(imageFormat, imageQuality)
         const pdf = new jsPDF('p', 'mm', 'a4')
 
         const imgWidth = 210 // A4 width in mm
@@ -38,14 +45,14 @@ export async function generatePDFFromHTML(htmlContent: string, filename: string 
         let position = 0
 
         // Add first page
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+        pdf.addImage(imgData, imageFormat === 'image/jpeg' ? 'JPEG' : 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST')
         heightLeft -= pageHeight
 
         // Add additional pages if needed
         while (heightLeft >= 0) {
             position = heightLeft - imgHeight
             pdf.addPage()
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+            pdf.addImage(imgData, imageFormat === 'image/jpeg' ? 'JPEG' : 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST')
             heightLeft -= pageHeight
         }
 
@@ -89,10 +96,16 @@ export async function generateAndDownloadPDF(htmlContent: string, filename: stri
 
 /**
  * Generate PDF and prepare for email sending
+ * Uses optimized settings to reduce file size for email
  */
 export async function generatePDFForEmail(htmlContent: string, filename: string = 'hop-dong-thue-phong.pdf'): Promise<{ blob: Blob, base64: string }> {
     try {
-        const pdfBlob = await generatePDFFromHTML(htmlContent, filename)
+        // Generate PDF with email-optimized settings (lower quality, smaller size)
+        const pdfBlob = await generatePDFFromHTML(htmlContent, filename, { forEmail: true })
+
+        // Log file size for debugging
+        const fileSizeKB = (pdfBlob.size / 1024).toFixed(2)
+        console.log(`PDF generated for email: ${fileSizeKB} KB`)
 
         // Convert to base64 for email attachment
         const base64 = await new Promise<string>((resolve, reject) => {
