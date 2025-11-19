@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="50" viewBox="0 0 200 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Icon -->
+  <g transform="translate(0, 5)">
+    <path d="M20 5L35 20H5L20 5Z" fill="#2563EB"/>
+    <path d="M10 20H30V35C30 37.7614 27.7614 40 25 40H15C12.2386 40 10 37.7614 10 35V20Z" fill="#2563EB"/>
+    <path d="M15 25C15 23.8954 15.8954 23 17 23H23C24.1046 23 25 23.8954 25 25V40H15V25Z" fill="#1F2937"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="50" y="32" font-family="Arial" font-weight="bold" font-size="24" fill="#1F2937">
+    HomeNest
+  </text>
+</svg> 
