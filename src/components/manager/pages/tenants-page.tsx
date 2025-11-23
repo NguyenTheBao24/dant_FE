@@ -347,8 +347,8 @@ export function TenantsPage({ selectedHostel }: TenantsPageProps) {
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {filteredTenants.map((tenant) => (
-                                <div key={tenant.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                            {filteredTenants.map((tenant, index) => (
+                                <div key={`${tenant.id}-${tenant.room_number || tenant.roomNumber || index}`} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                                     <div className="flex items-center justify-between">
                                         <div className="flex-1">
                                             <div className="flex items-center space-x-4">

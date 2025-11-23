@@ -50,8 +50,25 @@ export function ExpenseDialog({
     })
     const [isLoading, setIsLoading] = useState(false)
     const [errors, setErrors] = useState<{ [key: string]: string }>({})
+    const [toaNhaId, setToaNhaId] = useState<number | string | null>(null)
 
     useEffect(() => {
+        // Lưu toa_nha_id khi dialog mở - kiểm tra nhiều khả năng
+        // Ưu tiên: selectedHostel.id > selectedHostel.toa_nha_id
+        const currentToaNhaId = selectedHostel?.id || selectedHostel?.toa_nha_id || null
+
+        console.log('ExpenseDialog useEffect - isOpen:', isOpen)
+        console.log('ExpenseDialog useEffect - selectedHostel:', selectedHostel)
+        console.log('ExpenseDialog useEffect - selectedHostel?.id:', selectedHostel?.id, 'type:', typeof selectedHostel?.id)
+        console.log('ExpenseDialog useEffect - selectedHostel?.toa_nha_id:', selectedHostel?.toa_nha_id, 'type:', typeof selectedHostel?.toa_nha_id)
+        console.log('ExpenseDialog useEffect - currentToaNhaId:', currentToaNhaId, 'type:', typeof currentToaNhaId)
+
+        if (!currentToaNhaId && isOpen) {
+            console.warn('ExpenseDialog useEffect - WARNING: No toa_nha_id found when dialog opens!')
+        }
+
+        setToaNhaId(currentToaNhaId)
+
         if (isEdit && expenseData) {
             setFormData({
                 ngay: expenseData.ngay || '',
@@ -70,10 +87,15 @@ export function ExpenseDialog({
             })
         }
         setErrors({})
-    }, [isEdit, expenseData, isOpen])
+    }, [isEdit, expenseData, isOpen, selectedHostel])
 
     const validateForm = () => {
         const newErrors: { [key: string]: string } = {}
+
+        if (!toaNhaId) {
+            alert('Vui lòng chọn tòa nhà trước khi thêm chi tiêu')
+            return false
+        }
 
         if (!formData.ngay) {
             newErrors.ngay = 'Vui lòng chọn ngày'
@@ -100,20 +122,55 @@ export function ExpenseDialog({
             return
         }
 
+        // Kiểm tra lại toaNhaId từ cả state và selectedHostel prop
+        const finalToaNhaId = toaNhaId || selectedHostel?.id || selectedHostel?.toa_nha_id
+
+        console.log('ExpenseDialog - handleSubmit called')
+        console.log('ExpenseDialog - selectedHostel:', selectedHostel)
+        console.log('ExpenseDialog - selectedHostel?.id:', selectedHostel?.id)
+        console.log('ExpenseDialog - selectedHostel?.toa_nha_id:', selectedHostel?.toa_nha_id)
+        console.log('ExpenseDialog - toaNhaId from state:', toaNhaId)
+        console.log('ExpenseDialog - finalToaNhaId:', finalToaNhaId)
+
+        if (!finalToaNhaId) {
+            console.error('ExpenseDialog - Missing finalToaNhaId:', {
+                selectedHostel,
+                toaNhaId,
+                finalToaNhaId,
+                'selectedHostel?.id': selectedHostel?.id,
+                'selectedHostel?.toa_nha_id': selectedHostel?.toa_nha_id
+            })
+            alert('Vui lòng chọn tòa nhà trước khi thêm chi tiêu')
+            return
+        }
+
         setIsLoading(true)
         try {
+            // Đảm bảo toa_nha_id luôn là string (database yêu cầu varchar)
+            // Convert sang string nếu là number, giữ nguyên nếu đã là string
+            const toaNhaIdString = String(finalToaNhaId).trim()
+
+            if (!toaNhaIdString || toaNhaIdString === 'null' || toaNhaIdString === 'undefined') {
+                throw new Error(`toa_nha_id is invalid: ${toaNhaIdString}`)
+            }
+
             const submitData = {
-                toa_nha_id: selectedHostel.id,
+                toa_nha_id: toaNhaIdString, // Đảm bảo luôn là string
                 ngay: formData.ngay,
                 loai_chi: formData.loai_chi,
                 so_tien: Number(formData.so_tien),
                 mo_ta: formData.mo_ta || undefined
             }
 
+            console.log('ExpenseDialog - Submitting data:', JSON.stringify(submitData, null, 2))
+            console.log('ExpenseDialog - toa_nha_id type:', typeof submitData.toa_nha_id)
+            console.log('ExpenseDialog - toa_nha_id value:', submitData.toa_nha_id)
+            console.log('ExpenseDialog - toa_nha_id length:', submitData.toa_nha_id.length)
+
             if (isEdit && expenseData) {
-                await updateChiTieu(expenseData.id, submitData)
+                await updateChiTieu(expenseData.id, submitData as any)
             } else {
-                await createChiTieu(submitData)
+                await createChiTieu(submitData as any)
             }
 
             onSuccess()
@@ -245,7 +302,7 @@ export function ExpenseDialog({
                         </Button>
                         <Button
                             type="submit"
-                            disabled={isLoading}
+                            disabled={isLoading || !selectedHostel || (!selectedHostel.id && !selectedHostel.toa_nha_id)}
                             className="bg-red-600 hover:bg-red-700"
                         >
                             {isLoading ? 'Đang lưu...' : (isEdit ? 'Cập nhật' : 'Thêm mới')}

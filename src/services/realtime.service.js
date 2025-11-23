@@ -6,8 +6,17 @@ class RealtimeService {
     }
 
     subscribe(tableName, filterColumn, filterValue, callback) {
-        const channelName = `${tableName}-realtime-${filterColumn}-${filterValue}`
-        if (this.channels.has(channelName)) this.unsubscribe(channelName)
+        // Đảm bảo filterValue là string để so sánh đúng
+        const filterValueString = String(filterValue).trim()
+        const channelName = `${tableName}-realtime-${filterColumn}-${filterValueString}`
+
+        // Unsubscribe channel cũ nếu đã tồn tại
+        if (this.channels.has(channelName)) {
+            console.log(`🔌 [REALTIME] Unsubscribing existing channel: ${channelName}`)
+            this.unsubscribe(channelName)
+        }
+
+        console.log(`📡 [REALTIME] Subscribing to ${tableName} where ${filterColumn}=${filterValueString} (type: ${typeof filterValueString})`)
 
         const channel = supabase
             .channel(channelName)
@@ -15,8 +24,14 @@ class RealtimeService {
                 event: '*',
                 schema: 'public',
                 table: tableName,
-                filter: `${filterColumn}=eq.${filterValue}`
+                filter: `${filterColumn}=eq.${filterValueString}`
             }, (payload) => {
+                console.log(`📡 [REALTIME] Event received for ${tableName}:`, {
+                    eventType: payload.eventType,
+                    new: payload.new,
+                    old: payload.old
+                })
+
                 const event = {
                     type: tableName,
                     event: payload.eventType,
@@ -25,9 +40,25 @@ class RealtimeService {
                     new: payload.new,
                     timestamp: new Date().toISOString()
                 }
-                callback && callback(event)
+
+                if (callback) {
+                    callback(event)
+                } else {
+                    console.warn(`📡 [REALTIME] No callback provided for ${channelName}`)
+                }
             })
-            .subscribe()
+            .subscribe((status) => {
+                console.log(`📡 [REALTIME] Subscription status for ${channelName}:`, status)
+                if (status === 'SUBSCRIBED') {
+                    console.log(`✅ [REALTIME] Successfully subscribed to ${channelName}`)
+                } else if (status === 'CHANNEL_ERROR') {
+                    console.error(`❌ [REALTIME] Channel error for ${channelName}`)
+                } else if (status === 'TIMED_OUT') {
+                    console.warn(`⏱️ [REALTIME] Subscription timed out for ${channelName}`)
+                } else if (status === 'CLOSED') {
+                    console.log(`🔌 [REALTIME] Channel closed for ${channelName}`)
+                }
+            })
 
         this.channels.set(channelName, channel)
         return channel

@@ -15,9 +15,10 @@ import {
   RefreshCw,
   Search,
   Filter,
-  CheckCircle2,
   Clock,
   Eye,
+  Calendar,
+  X,
 } from "lucide-react";
 
 interface InvoicesPageProps {
@@ -233,24 +234,68 @@ export function InvoicesPage({ selectedHostel }: InvoicesPageProps) {
         </Card>
       </div>
 
-      <Card>
-        <CardContent className="p-6 space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-4 md:space-y-0">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Tìm theo mã hóa đơn, khách thuê hoặc phòng..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={searchTerm}
-                onChange={event => setSearchTerm(event.target.value)}
-              />
+      <Card className="border-gray-200 shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Filter className="h-5 w-5 text-gray-600" />
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Bộ lọc
+              </CardTitle>
+            </div>
+            {(searchTerm || statusFilter !== "all" || monthFilter !== "all") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchTerm("");
+                  setStatusFilter("all");
+                  setMonthFilter("all");
+                }}
+                className="text-gray-600 hover:text-gray-900"
+              >
+                <X className="h-4 w-4 mr-1" />
+                Xóa tất cả
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Search Input */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 flex items-center space-x-1">
+                <Search className="h-4 w-4" />
+                <span>Tìm kiếm</span>
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Mã hóa đơn, khách thuê, phòng..."
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-sm"
+                  value={searchTerm}
+                  onChange={event => setSearchTerm(event.target.value)}
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Filter className="h-4 w-4 text-gray-400" />
+            {/* Status Filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 flex items-center space-x-1">
+                <Filter className="h-4 w-4" />
+                <span>Trạng thái</span>
+              </label>
               <select
-                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-sm appearance-none cursor-pointer"
                 value={statusFilter}
                 onChange={event =>
                   setStatusFilter(event.target.value as "all" | string)
@@ -263,24 +308,73 @@ export function InvoicesPage({ selectedHostel }: InvoicesPageProps) {
               </select>
             </div>
 
-            <input
-              type="month"
-              className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              value={monthFilter === "all" ? "" : monthFilter}
-              onChange={event => setMonthFilter(event.target.value || "all")}
-              placeholder={currentMonthValue}
-            />
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setSearchTerm("");
-                setStatusFilter("all");
-                setMonthFilter("all");
-              }}
-            >
-              Xóa lọc
-            </Button>
+            {/* Month Filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 flex items-center space-x-1">
+                <Calendar className="h-4 w-4" />
+                <span>Tháng/Năm</span>
+              </label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                <input
+                  type="month"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-sm cursor-pointer"
+                  value={monthFilter === "all" ? "" : monthFilter}
+                  onChange={event => setMonthFilter(event.target.value || "all")}
+                />
+                {monthFilter !== "all" && (
+                  <button
+                    onClick={() => setMonthFilter("all")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
+
+          {/* Active Filters Display */}
+          {(searchTerm || statusFilter !== "all" || monthFilter !== "all") && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-medium text-gray-500">Đang lọc:</span>
+                {searchTerm && (
+                  <Badge variant="secondary" className="text-xs">
+                    Tìm kiếm: "{searchTerm}"
+                    <button
+                      onClick={() => setSearchTerm("")}
+                      className="ml-1 hover:text-gray-900"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                )}
+                {statusFilter !== "all" && (
+                  <Badge variant="secondary" className="text-xs">
+                    {STATUS_LABELS[statusFilter] || statusFilter}
+                    <button
+                      onClick={() => setStatusFilter("all")}
+                      className="ml-1 hover:text-gray-900"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                )}
+                {monthFilter !== "all" && (
+                  <Badge variant="secondary" className="text-xs">
+                    Tháng: {monthFilter}
+                    <button
+                      onClick={() => setMonthFilter("all")}
+                      className="ml-1 hover:text-gray-900"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

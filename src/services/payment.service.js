@@ -69,8 +69,8 @@ export async function getInvoiceStatus(invoiceId) {
 export function generateSePayQRUrl(
   amount,
   invoiceId,
-  account = "0570101451408",
-  bank = "MBBank"
+  account = "0869346831",
+  bank = "VPBank"
 ) {
   const baseUrl = "https://qr.sepay.vn/img";
   const params = new URLSearchParams({

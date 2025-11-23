@@ -1,4 +1,5 @@
 import { supabase } from "./supabase-client";
+import { createThongBaoForManagerAboutContact } from "./thong-bao.service";
 
 function generateQuanTamId() {
   const prefix = "QT";
@@ -52,6 +53,22 @@ export async function createQuanTam(data) {
     }
 
     console.log("Successfully created quan tam:", result);
+
+    // Tự động tạo thông báo cho quản lý về thông tin liên hệ mới
+    try {
+      await createThongBaoForManagerAboutContact(
+        result.toa_nha_id,
+        result.ho_ten,
+        result.sdt,
+        result.email || null,
+        result.ghi_chu || null
+      );
+      console.log("Notification created for manager about new contact:", result.id);
+    } catch (notifError) {
+      // Không throw error nếu tạo thông báo thất bại, chỉ log
+      console.warn("Failed to create notification for manager:", notifError);
+    }
+
     return result;
   } catch (error) {
     console.error("Error in createQuanTam:", error);

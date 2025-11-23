@@ -1,5 +1,6 @@
 import { supabase } from "./supabase-client";
 import { generateInvoiceId } from "../utils/invoice.utils";
+import { createThongBaoForAdminAboutInvoice } from "./thong-bao.service";
 
 function isReady() {
   return !!(
@@ -256,6 +257,19 @@ export async function createOrUpdateInvoice(
     if (error) {
       console.error("Error creating new invoice:", error);
       throw error;
+    }
+
+    // Tự động tạo thông báo cho admin về hóa đơn mới
+    try {
+      await createThongBaoForAdminAboutInvoice(
+        invoiceId,
+        hopDongId,
+        invoiceData.tong_tien || invoiceData.so_tien
+      );
+      console.log("Notification created for admin about new invoice:", invoiceId);
+    } catch (notifError) {
+      // Không throw error nếu tạo thông báo thất bại, chỉ log
+      console.warn("Failed to create notification for admin:", notifError);
     }
 
     return { ...data, action: "created" };

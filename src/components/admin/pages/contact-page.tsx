@@ -126,10 +126,10 @@ export function ContactPage({
             email: selectedHostel.manager.email,
             tai_khoan: selectedHostel.manager.username
               ? {
-                  username: selectedHostel.manager.username,
-                  role: selectedHostel.manager.role,
-                  password: selectedHostel.manager.password,
-                }
+                username: selectedHostel.manager.username,
+                role: selectedHostel.manager.role,
+                password: selectedHostel.manager.password,
+              }
               : null,
           },
         ]);
@@ -198,8 +198,22 @@ export function ContactPage({
     try {
       await deleteQuanLy(m.id);
       setManagers(prev => prev.filter(x => x.id !== m.id));
-    } catch (e) {
+
+      // Nếu quản lý đang xóa là quản lý của tòa nhà hiện tại, cập nhật selectedHostel
+      if (selectedHostel?.manager?.id === m.id && onManagerAction) {
+        onManagerAction("update_manager", {
+          id: null,
+          name: "",
+          phone: "",
+          email: "",
+        });
+      }
+
+      alert("Xóa quản lý thành công!");
+    } catch (e: any) {
       console.error("Failed to delete manager:", e);
+      const errorMessage = e?.message || e?.details || "Không thể xóa quản lý. Vui lòng thử lại.";
+      alert(`Lỗi khi xóa quản lý: ${errorMessage}`);
     }
   }
 

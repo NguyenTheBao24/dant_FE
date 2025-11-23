@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { listCanHoByToaNha, determineRoomType } from "@/services/can-ho.service"
 import { listHopDongByToaNha } from "@/services/hop-dong.service"
+import { tinhDoanhThuTheoThangTuHoaDon, tinhDoanhThuThang } from "@/services/hoa-don.service"
 // Import chi-tieu service dynamically to avoid circular dependencies
 
 export function useOverviewData(selectedHostel: any, occupiedRoomsCount: number) {
@@ -143,7 +144,17 @@ export function useOverviewData(selectedHostel: any, occupiedRoomsCount: number)
                 console.log('Final room revenue data length:', roomRevenueData.length)
 
                 setRoomRevenues(roomRevenueData)
-                setTotalMonthlyRevenue(totalRevenue)
+
+                // Tính doanh thu tháng hiện tại từ hóa đơn đã thanh toán
+                const currentDate = new Date()
+                const currentYear = currentDate.getFullYear()
+                const currentMonth = currentDate.getMonth() + 1
+                const currentMonthRevenue = await tinhDoanhThuThang(
+                    selectedHostel.id,
+                    currentYear,
+                    currentMonth
+                )
+                setTotalMonthlyRevenue(currentMonthRevenue)
 
                 // Tính toán doanh thu theo loại phòng
                 const revenueByType: { [key: string]: any } = {}
@@ -234,24 +245,9 @@ export function useOverviewData(selectedHostel: any, occupiedRoomsCount: number)
 
                 setCurrentMonthExpenses(currentMonthExpensesTotal)
 
-                // ✅ Gom doanh thu theo tháng dựa trên HỢP ĐỒNG hiệu lực trong từng tháng
-                // Sử dụng tất cả hợp đồng của tòa nhà để phản ánh doanh thu thực tế theo thời gian
-                const revenueByMonthMap: Record<string, number> = {}
-                hostelContracts.forEach((contract: any) => {
-                    const start = new Date(contract.ngay_bat_dau)
-                    const end = contract.ngay_ket_thuc ? new Date(contract.ngay_ket_thuc) : new Date()
-                    const rent = contract.can_ho?.gia_thue || 0
-                    if (!isFinite(start.getTime()) || !isFinite(end.getTime()) || rent <= 0) return
-
-                    // Lặp từng tháng mà hợp đồng còn hiệu lực
-                    const loop = new Date(start.getFullYear(), start.getMonth(), 1)
-                    const endMonth = new Date(end.getFullYear(), end.getMonth(), 1)
-                    while (loop <= endMonth) {
-                        const ym = `${loop.getFullYear()}-${String(loop.getMonth() + 1).padStart(2, '0')}`
-                        revenueByMonthMap[ym] = (revenueByMonthMap[ym] || 0) + rent
-                        loop.setMonth(loop.getMonth() + 1)
-                    }
-                })
+                // ✅ Gom doanh thu theo tháng dựa trên HÓA ĐƠN ĐÃ THANH TOÁN
+                // Chỉ tính các hóa đơn có trạng thái đã thanh toán thành công
+                const revenueByMonthMap: Record<string, number> = await tinhDoanhThuTheoThangTuHoaDon(selectedHostel.id) || {}
 
                 if (Number(selectedHostel.id) === 38) {
                     try {

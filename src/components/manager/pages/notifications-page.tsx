@@ -21,13 +21,47 @@ export function NotificationsPage({ selectedHostel }: NotificationsPageProps) {
     const [selectedNotification, setSelectedNotification] = useState(null)
     const [showManagerDialog, setShowManagerDialog] = useState(false)
 
-    const { realtimeStatus } = useManagerNotificationRealtime(selectedHostel?.id, () => {
-        // Tránh reload toàn bộ danh sách để UI mượt hơn; realtime sẽ đẩy bản ghi mới
+    const { realtimeStatus, notifications: realtimeNotifications } = useManagerNotificationRealtime(selectedHostel?.id, (event: any) => {
+        console.log('📡 [NOTIFICATIONS PAGE] Realtime event received:', event)
+        if (event && event.event === 'INSERT') {
+            console.log('📡 [NOTIFICATIONS PAGE] New notification received, reloading list...')
+            console.log('📡 [NOTIFICATIONS PAGE] New notification data:', event.data)
+            // Reload lại danh sách để đảm bảo có đầy đủ dữ liệu
+            // Đợi một chút để đảm bảo database đã commit transaction
+            setTimeout(() => {
+                loadNotifications()
+            }, 1000)
+        } else if (event && event.event === 'UPDATE') {
+            console.log('📡 [NOTIFICATIONS PAGE] Notification updated:', event.data)
+            // Cập nhật thông báo đã có trong danh sách
+            setNotifications(prev => prev.map(n =>
+                n.id === event.data.id ? event.data : n
+            ))
+        }
     })
 
     useEffect(() => {
-        if (selectedHostel?.id) loadNotifications()
+        if (selectedHostel?.id) {
+            loadNotifications()
+        }
     }, [selectedHostel?.id])
+
+    // Sync notifications từ realtime hook với local state
+    // Chỉ sync khi có thông báo mới từ realtime
+    useEffect(() => {
+        if (realtimeNotifications && realtimeNotifications.length > 0 && notifications.length > 0) {
+            // Kiểm tra xem có thông báo mới không (có trong realtime nhưng chưa có trong local)
+            const newNotifications = realtimeNotifications.filter((rtNotif: any) =>
+                !notifications.some((n: any) => n.id === rtNotif.id)
+            )
+
+            if (newNotifications.length > 0) {
+                console.log('📡 [NOTIFICATIONS PAGE] Found new notifications from realtime, reloading...', newNotifications)
+                // Reload lại để lấy đầy đủ dữ liệu từ server
+                loadNotifications()
+            }
+        }
+    }, [realtimeNotifications?.length]) // Chỉ trigger khi số lượng thay đổi
 
     // Không fetch lại khi đổi filter để tránh cảm giác reload
 

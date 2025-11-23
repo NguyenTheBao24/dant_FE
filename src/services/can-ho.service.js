@@ -1,4 +1,5 @@
 import { supabase } from './supabase-client'
+import { generateFormattedId } from '../utils/id-generator'
 
 function isReady() {
     return !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY)
@@ -51,11 +52,58 @@ export async function getCanHoById(id) {
     return data
 }
 
+/**
+ * Lấy ID tiếp theo cho can_ho theo format: CH0000000001
+ */
+async function getNextCanHoId() {
+    try {
+        console.log('Getting next can_ho id...')
+
+        const { data, error } = await supabase
+            .from('can_ho')
+            .select('id')
+            .order('id', { ascending: false })
+            .limit(100) // Lấy nhiều hơn để đảm bảo tìm được max
+
+        if (error) {
+            console.error('Error getting max id:', error)
+            console.warn('Using fallback id: CH0000000001')
+            return 'CH0000000001'
+        }
+
+        if (data && data.length > 0) {
+            const existingIds = data.map(ch => ch.id).filter(Boolean)
+            const nextId = generateFormattedId('CH', existingIds)
+            console.log('Next id will be:', nextId)
+            return nextId
+        }
+
+        console.log('No existing records, using id: CH0000000001')
+        return 'CH0000000001'
+    } catch (error) {
+        console.error('Error in getNextCanHoId:', error)
+        console.warn('Using fallback id: CH0000000001')
+        return 'CH0000000001'
+    }
+}
+
 export async function createCanHo(payload) {
     if (!isReady()) return null
-    const { data, error } = await supabase.from('can_ho').insert([payload]).select().single()
-    if (error) throw error
-    return data
+
+    try {
+        // Generate id nếu chưa có
+        if (!payload.id) {
+            const nextId = await getNextCanHoId()
+            payload.id = nextId
+        }
+
+        const { data, error } = await supabase.from('can_ho').insert([payload]).select().single()
+        if (error) throw error
+        return data
+    } catch (error) {
+        console.error('Error creating can_ho:', error)
+        throw error
+    }
 }
 
 export async function updateCanHo(id, updates) {
@@ -157,6 +205,47 @@ export async function createFixedCanHoForToaNha(toaNhaId, total = 10, customRoom
     }
 
     console.log(`Total rooms to create: ${items.length}`)
+
+    // Generate IDs cho tất cả items
+    try {
+        const { data: existingData } = await supabase
+            .from('can_ho')
+            .select('id')
+            .order('id', { ascending: false })
+            .limit(100)
+
+        const existingIds = existingData ? existingData.map(ch => ch.id).filter(Boolean) : []
+        let currentSequence = 0
+
+        // Tìm sequence cao nhất
+        if (existingIds.length > 0) {
+            for (const id of existingIds) {
+                if (typeof id === 'string' && id.startsWith('CH')) {
+                    const seq = parseInt(id.slice(2), 10)
+                    if (!isNaN(seq) && seq > currentSequence) {
+                        currentSequence = seq
+                    }
+                }
+            }
+        }
+
+        // Generate IDs cho từng item
+        for (let i = 0; i < items.length; i++) {
+            currentSequence++
+            items[i].id = `CH${String(currentSequence).padStart(10, '0')}`
+        }
+
+        console.log('Generated IDs for rooms:', items.map(item => item.id))
+    } catch (idError) {
+        console.warn('Error generating IDs, using fallback:', idError)
+        // Fallback: generate IDs đơn giản
+        for (let i = 0; i < items.length; i++) {
+            if (!items[i].id) {
+                items[i].id = `CH${String(i + 1).padStart(10, '0')}`
+            }
+        }
+    }
+
     const { data, error } = await supabase.from('can_ho').insert(items).select()
     if (error) throw error
     return data || []

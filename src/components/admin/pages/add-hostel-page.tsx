@@ -64,6 +64,7 @@ export function AddHostelPage({
   const [editForm, setEditForm] = useState(defaultForm);
   const [managerOptions, setManagerOptions] = useState<any[]>([]);
   const [isLoadingManagers, setIsLoadingManagers] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   const totalRooms = useMemo(
     () => hostels.reduce((sum, h) => sum + (h.rooms || h.so_can_ho || 0), 0),
@@ -84,6 +85,12 @@ export function AddHostelPage({
   }
 
   async function handleCreate() {
+    // Prevent duplicate submission
+    if (isCreating) {
+      console.warn('Create already in progress, ignoring duplicate call');
+      return;
+    }
+
     const payload = {
       ten_toa: form.ten_toa.trim(),
       dia_chi: form.dia_chi.trim(),
@@ -94,9 +101,17 @@ export function AddHostelPage({
       alert("Vui lòng nhập tên và địa chỉ khu trọ");
       return;
     }
-    await onSubmit?.(payload);
-    setForm(defaultForm);
-    setCreateDialogOpen(false);
+
+    setIsCreating(true);
+    try {
+      await onSubmit?.(payload);
+      setForm(defaultForm);
+      setCreateDialogOpen(false);
+    } catch (error) {
+      console.error('Error creating hostel:', error);
+    } finally {
+      setIsCreating(false);
+    }
   }
 
   async function handleUpdate() {
@@ -356,10 +371,13 @@ export function AddHostelPage({
             <Button
               variant="outline"
               onClick={() => setCreateDialogOpen(false)}
+              disabled={isCreating}
             >
               Huỷ
             </Button>
-            <Button onClick={handleCreate}>Tạo khu trọ</Button>
+            <Button onClick={handleCreate} disabled={isCreating}>
+              {isCreating ? 'Đang tạo...' : 'Tạo khu trọ'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

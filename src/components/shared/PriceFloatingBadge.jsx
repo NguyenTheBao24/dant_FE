@@ -5,9 +5,9 @@ const PriceFloatingBadge = ({
     position = "absolute -top-4 -right-4"
 }) => {
     return (
-        <div className={`${position} bg-gradient-to-r ${gradientColors} text-white px-6 py-3 rounded-2xl shadow-lg transform rotate-12 hover:rotate-0 transition-transform duration-300`}>
-            <div className="text-sm font-medium">{fromText}</div>
-            <div className="text-xl font-bold">{price}</div>
+        <div className={`${position} bg-slate-900 text-white px-5 py-2.5 rounded-lg shadow-md`}>
+            <div className="text-xs font-medium text-slate-300">{fromText}</div>
+            <div className="text-lg font-bold">{price}</div>
         </div>
     );
 };

@@ -44,6 +44,15 @@ export function NotificationDetailDialog({
             if (notification?.id && isOpen) loadResponses()
         }, [notification?.id, isOpen])
 
+        // Auto scroll khi có phản hồi mới
+        useEffect(() => {
+            if (responses.length > 0 && responsesEndRef.current) {
+                setTimeout(() => {
+                    responsesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+                }, 100)
+            }
+        }, [responses.length])
+
         const loadResponses = async () => {
             if (!notification?.id) return
             try {

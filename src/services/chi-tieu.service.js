@@ -2,6 +2,63 @@ import { supabase } from './supabase-client'
 
 // Interface cho chi tiêu (moved to .d.ts file)
 
+/**
+ * Generate ID cho chi tiêu theo format: CTYYYYMMDDXXXXXX
+ * Ví dụ: CT20250101000001
+ * - CT: prefix
+ * - YYYYMMDD: năm + tháng + ngày (8 chữ số)
+ * - XXXXXX: số thứ tự trong ngày (6 chữ số)
+ */
+async function getNextChiTieuId(date = new Date()) {
+    try {
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        const dateStr = `${year}${month}${day}` // YYYYMMDD
+        const prefix = `CT${dateStr}`
+
+        // Lấy tất cả chi tiêu có cùng ngày
+        const startDate = `${year}-${month}-${day}`
+        const { data, error } = await supabase
+            .from('chi_tieu')
+            .select('id')
+            .gte('ngay', startDate)
+            .lt('ngay', `${year}-${month}-${String(parseInt(day) + 1).padStart(2, '0')}`)
+            .order('id', { ascending: false })
+
+        if (error) {
+            console.warn('Error getting existing chi tieu IDs, using default:', error)
+            return `${prefix}000001`
+        }
+
+        // Tìm số thứ tự cao nhất
+        let maxSequence = 0
+        if (data && data.length > 0) {
+            for (const item of data) {
+                if (item.id && typeof item.id === 'string' && item.id.startsWith(prefix)) {
+                    const sequenceStr = item.id.slice(prefix.length)
+                    const sequence = parseInt(sequenceStr, 10)
+                    if (!isNaN(sequence) && sequence > maxSequence) {
+                        maxSequence = sequence
+                    }
+                }
+            }
+        }
+
+        const nextSequence = maxSequence + 1
+        const sequenceStr = String(nextSequence).padStart(6, '0')
+        return `${prefix}${sequenceStr}`
+    } catch (error) {
+        console.error('Error in getNextChiTieuId:', error)
+        // Fallback: sử dụng timestamp
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        const timestamp = Date.now() % 1000000
+        return `CT${year}${month}${day}${String(timestamp).padStart(6, '0')}`
+    }
+}
+
 // Lấy tất cả chi tiêu của một tòa nhà
 export async function listChiTieuByToaNha(toaNhaId) {
     try {
@@ -47,17 +104,65 @@ export async function getChiTieuById(id) {
 // Tạo chi tiêu mới
 export async function createChiTieu(chiTieuData) {
     try {
+        console.log('createChiTieu - Received data:', JSON.stringify(chiTieuData, null, 2))
+        console.log('createChiTieu - toa_nha_id:', chiTieuData.toa_nha_id, 'type:', typeof chiTieuData.toa_nha_id)
+
+        // Đảm bảo toa_nha_id không null/undefined
+        if (!chiTieuData.toa_nha_id) {
+            const error = new Error('toa_nha_id is required but was null or undefined')
+            console.error('createChiTieu - Validation error:', error)
+            throw error
+        }
+
+        // Convert toa_nha_id sang string và trim
+        const toaNhaIdString = String(chiTieuData.toa_nha_id).trim()
+
+        if (!toaNhaIdString || toaNhaIdString === 'null' || toaNhaIdString === 'undefined' || toaNhaIdString === '') {
+            const error = new Error(`toa_nha_id is invalid: "${toaNhaIdString}"`)
+            console.error('createChiTieu - Validation error:', error)
+            throw error
+        }
+
+        // Đảm bảo toa_nha_id là string
+        // Không thêm ID vào đây vì database có thể tự động generate
+        const dataToInsert = {
+            ...chiTieuData,
+            toa_nha_id: toaNhaIdString
+        }
+
+        // Chỉ thêm ID nếu chưa có trong chiTieuData
+        // (Database có thể tự động generate ID theo format CTYYYYMMDDXXXXXX)
+        if (!dataToInsert.id) {
+            try {
+                const expenseDate = chiTieuData.ngay ? new Date(chiTieuData.ngay) : new Date()
+                const expenseId = await getNextChiTieuId(expenseDate)
+                dataToInsert.id = expenseId
+                console.log('createChiTieu - Generated ID:', expenseId)
+            } catch (idError) {
+                console.warn('createChiTieu - Could not generate ID, database will auto-generate:', idError)
+                // Bỏ qua lỗi generate ID, để database tự generate
+            }
+        }
+
+        console.log('createChiTieu - Data to insert:', JSON.stringify(dataToInsert, null, 2))
+        console.log('createChiTieu - Final toa_nha_id:', dataToInsert.toa_nha_id, 'type:', typeof dataToInsert.toa_nha_id)
+
         const { data, error } = await supabase
             .from('chi_tieu')
-            .insert([chiTieuData])
+            .insert([dataToInsert])
             .select()
             .single()
 
         if (error) {
             console.error('Error creating chi tieu:', error)
+            console.error('Error details:', JSON.stringify(error, null, 2))
+            console.error('Error code:', error.code)
+            console.error('Error message:', error.message)
+            console.error('Error hint:', error.hint)
             throw error
         }
 
+        console.log('createChiTieu - Success, created data:', data)
         return data
     } catch (error) {
         console.error('Error in createChiTieu:', error)

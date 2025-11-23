@@ -49,14 +49,43 @@ export function SendNotificationDialog({
         setError('')
 
         try {
+            // Validate các trường bắt buộc
+            const toaNhaId = activeContract.can_ho?.toa_nha_id || activeContract.toa_nha_id
+            const canHoId = activeContract.can_ho_id || activeContract.can_ho?.id
+
+            console.log('SendNotificationDialog - activeContract:', activeContract)
+            console.log('SendNotificationDialog - toaNhaId:', toaNhaId)
+            console.log('SendNotificationDialog - canHoId:', canHoId)
+            console.log('SendNotificationDialog - userInfo.id:', userInfo?.id)
+
+            if (!userInfo?.id) {
+                setError('Không tìm thấy thông tin khách thuê')
+                setIsSubmitting(false)
+                return
+            }
+
+            if (!toaNhaId) {
+                setError('Không tìm thấy thông tin tòa nhà. Vui lòng liên hệ quản trị viên.')
+                setIsSubmitting(false)
+                return
+            }
+
+            if (!canHoId) {
+                setError('Không tìm thấy thông tin phòng. Vui lòng liên hệ quản trị viên.')
+                setIsSubmitting(false)
+                return
+            }
+
             const notificationData = {
                 khach_thue_id: userInfo.id,
-                toa_nha_id: activeContract.can_ho?.toa_nha_id,
-                can_ho_id: activeContract.can_ho_id,
+                toa_nha_id: toaNhaId,
+                can_ho_id: canHoId,
                 tieu_de: formData.tieu_de.trim(),
                 noi_dung: formData.noi_dung.trim(),
                 loai_thong_bao: formData.loai_thong_bao
             }
+
+            console.log('SendNotificationDialog - notificationData:', notificationData)
 
             const result = await createThongBao(notificationData)
 

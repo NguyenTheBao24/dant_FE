@@ -205,7 +205,7 @@ const ContactFormSection = ({ contactForm, setContactForm, onSubmit, isSubmitted
     };
 
     return (
-        <section id="contact" className="relative py-24 overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
+        <section id="contact" className="relative py-24 overflow-hidden bg-slate-50">
             <BackgroundEffects />
 
             <div className="container mx-auto px-4 relative z-10">
@@ -217,109 +217,99 @@ const ContactFormSection = ({ contactForm, setContactForm, onSubmit, isSubmitted
                         <>
                             Chúng tôi sẽ liên hệ với bạn trong vòng 24h để tư vấn và hỗ trợ xem phòng.
                             <br />
-                            <span className="text-purple-200">Đặt lịch hẹn miễn phí ngay bây giờ!</span>
+                            <span className="text-slate-500">Đặt lịch hẹn miễn phí ngay bây giờ!</span>
                         </>
                     }
                 />
 
                 <div className="max-w-4xl mx-auto">
-                    <div className="relative group">
-                        {/* Hiệu ứng phát sáng */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-blue-400/30 via-purple-400/30 to-pink-400/30 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-700 transform group-hover:scale-110"></div>
-
-                        {/* Container form chính */}
-                        <div className="relative bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl p-10 md:p-12 shadow-2xl">
-                            {/* Góc trang trí */}
-                            <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-yellow-400/20 to-orange-400/20 rounded-br-full rounded-tl-3xl"></div>
-                            <div className="absolute bottom-0 right-0 w-28 h-28 bg-gradient-to-tl from-blue-400/20 to-purple-400/20 rounded-tl-full rounded-br-3xl"></div>
-
-                            {isSubmitted ? (
-                                <SuccessMessage />
-                            ) : (
-                                <form onSubmit={handleFormSubmit} className="space-y-8 relative z-10">
-                                    <div className="grid md:grid-cols-2 gap-8">
-                                        <FormInput
-                                            type="text"
-                                            name="name"
-                                            value={contactForm.name}
-                                            onChange={handleInputChange}
-                                            required
-                                            label="Họ và tên"
-                                            placeholder="Nhập họ và tên của bạn"
-                                            focusColor="blue-400"
-                                        />
-
-                                        <FormInput
-                                            type="tel"
-                                            name="phone"
-                                            value={contactForm.phone}
-                                            onChange={handleInputChange}
-                                            required
-                                            label="Số điện thoại"
-                                            placeholder="Nhập số điện thoại"
-                                            focusColor="green-400"
-                                        />
-                                    </div>
+                    <div className="relative bg-white border border-slate-200 rounded-xl p-10 md:p-12 shadow-sm">
+                        {isSubmitted ? (
+                            <SuccessMessage />
+                        ) : (
+                            <form onSubmit={handleFormSubmit} className="space-y-6">
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <FormInput
+                                        type="text"
+                                        name="name"
+                                        value={contactForm.name}
+                                        onChange={handleInputChange}
+                                        required
+                                        label="Họ và tên"
+                                        placeholder="Nhập họ và tên của bạn"
+                                        focusColor="slate-600"
+                                    />
 
                                     <FormInput
-                                        type="email"
-                                        name="email"
-                                        value={contactForm.email}
+                                        type="tel"
+                                        name="phone"
+                                        value={contactForm.phone}
                                         onChange={handleInputChange}
-                                        label="Email"
-                                        placeholder="Nhập email (không bắt buộc)"
-                                        focusColor="purple-400"
+                                        required
+                                        label="Số điện thoại"
+                                        placeholder="Nhập số điện thoại"
+                                        focusColor="slate-600"
                                     />
+                                </div>
 
-                                    <FormSelect
-                                        name="roomType"
-                                        value={contactForm.roomType}
-                                        onChange={handleInputChange}
-                                        options={roomTypeOptions}
-                                        placeholder="Chọn loại phòng bạn quan tâm"
-                                        label="Loại phòng quan tâm"
-                                        focusColor="orange-400"
-                                    />
+                                <FormInput
+                                    type="email"
+                                    name="email"
+                                    value={contactForm.email}
+                                    onChange={handleInputChange}
+                                    label="Email"
+                                    placeholder="Nhập email (không bắt buộc)"
+                                    focusColor="slate-600"
+                                />
 
-                                    <BuildingSelection
-                                        selectedBuilding={selectedBuilding}
-                                        onBuildingSelect={handleBuildingSelect}
-                                    />
+                                <FormSelect
+                                    name="roomType"
+                                    value={contactForm.roomType}
+                                    onChange={handleInputChange}
+                                    options={roomTypeOptions}
+                                    placeholder="Chọn loại phòng bạn quan tâm"
+                                    label="Loại phòng quan tâm"
+                                    focusColor="slate-600"
+                                />
 
-                                    <FormTextarea
-                                        name="message"
-                                        value={contactForm.message}
-                                        onChange={handleInputChange}
-                                        rows="5"
-                                        label="Tin nhắn"
-                                        placeholder="Chia sẻ yêu cầu đặc biệt hoặc câu hỏi của bạn..."
-                                        focusColor="indigo-400"
-                                    />
+                                <BuildingSelection
+                                    selectedBuilding={selectedBuilding}
+                                    onBuildingSelect={handleBuildingSelect}
+                                />
 
-                                    <SubmitButton type="submit" disabled={isSubmitting}>
-                                        {isSubmitting ? 'Đang gửi...' : 'Gửi Thông Tin Liên Hệ'}
-                                    </SubmitButton>
+                                <FormTextarea
+                                    name="message"
+                                    value={contactForm.message}
+                                    onChange={handleInputChange}
+                                    rows="5"
+                                    label="Tin nhắn"
+                                    placeholder="Chia sẻ yêu cầu đặc biệt hoặc câu hỏi của bạn..."
+                                    focusColor="slate-600"
+                                />
 
-                                    <p className="text-sm text-blue-200/80 text-center leading-relaxed">
-                                        Bằng việc gửi thông tin, bạn đồng ý với{' '}
-                                        <button
-                                            type="button"
-                                            onClick={() => openPopup('terms')}
-                                            className="text-yellow-300 hover:text-yellow-200 transition-colors duration-300 underline decoration-dotted hover:no-underline font-medium"
-                                        >
-                                            điều khoản sử dụng
-                                        </button> và{' '}
-                                        <button
-                                            type="button"
-                                            onClick={() => openPopup('privacy')}
-                                            className="text-yellow-300 hover:text-yellow-200 transition-colors duration-300 underline decoration-dotted hover:no-underline font-medium"
-                                        >
-                                            chính sách bảo mật
-                                        </button> của chúng tôi.
-                                    </p>
-                                </form>
-                            )}
-                        </div>
+                                <SubmitButton type="submit" disabled={isSubmitting}>
+                                    {isSubmitting ? 'Đang gửi...' : 'Gửi Thông Tin Liên Hệ'}
+                                </SubmitButton>
+
+                                <p className="text-sm text-slate-500 text-center leading-relaxed">
+                                    Bằng việc gửi thông tin, bạn đồng ý với{' '}
+                                    <button
+                                        type="button"
+                                        onClick={() => openPopup('terms')}
+                                        className="text-slate-700 hover:text-slate-900 transition-colors duration-200 underline decoration-dotted hover:no-underline font-medium"
+                                    >
+                                        điều khoản sử dụng
+                                    </button> và{' '}
+                                    <button
+                                        type="button"
+                                        onClick={() => openPopup('privacy')}
+                                        className="text-slate-700 hover:text-slate-900 transition-colors duration-200 underline decoration-dotted hover:no-underline font-medium"
+                                    >
+                                        chính sách bảo mật
+                                    </button> của chúng tôi.
+                                </p>
+                            </form>
+                        )}
                     </div>
                 </div>
             </div>

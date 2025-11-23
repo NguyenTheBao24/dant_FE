@@ -140,7 +140,10 @@ export function AddTenantDialog({
                 ho_ten: name,
                 sdt: phone,
             }
-            // Chỉ thêm email và cccd nếu có giá trị
+            // Chỉ thêm các field optional nếu có giá trị
+            if (address && address.trim()) {
+                khachThueData.dia_chi = address.trim()
+            }
             if (email && email.trim()) {
                 khachThueData.email = email.trim()
             }

@@ -102,13 +102,16 @@ const RoomDetailsSection = ({ onSetRoomType, onScrollToSection }) => {
     };
 
     return (
-        <section id="rooms" className="py-16">
+        <section id="rooms" className="py-24 bg-slate-50">
             <div className="container mx-auto px-4">
-                <h3 className="text-3xl font-bold text-center text-gray-800 mb-12">
-                    Các Loại Phòng Chi Tiết
-                </h3>
+                <div className="text-center mb-16">
+                    <h3 className="text-4xl font-bold text-slate-900 mb-4">
+                        Các Loại Phòng Chi Tiết
+                    </h3>
+                    <div className="w-16 h-0.5 bg-slate-300 rounded-full mx-auto"></div>
+                </div>
 
-                <div className="space-y-12">
+                <div className="space-y-0">
                     {roomDetails.map((room, index) => (
                         <RoomCard
                             key={room.id}

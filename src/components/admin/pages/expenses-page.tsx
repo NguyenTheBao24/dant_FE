@@ -219,7 +219,21 @@ export function ExpensesPage({ selectedHostel }: ExpensesPageProps) {
                         Bảng giá dịch vụ
                     </Button>
                     <Button
-                        onClick={() => setIsDialogOpen(true)}
+                        onClick={() => {
+                            console.log('ExpensesPage - Button clicked, selectedHostel:', selectedHostel)
+                            if (!selectedHostel) {
+                                console.error('ExpensesPage - selectedHostel is null/undefined')
+                                alert('Vui lòng chọn tòa nhà trước khi thêm chi tiêu')
+                                return
+                            }
+                            if (!selectedHostel.id && !selectedHostel.toa_nha_id) {
+                                console.error('ExpensesPage - selectedHostel.id and toa_nha_id are both missing:', selectedHostel)
+                                alert('Vui lòng chọn tòa nhà trước khi thêm chi tiêu')
+                                return
+                            }
+                            console.log('ExpensesPage - Opening dialog with selectedHostel:', selectedHostel)
+                            setIsDialogOpen(true)
+                        }}
                         className="bg-red-600 hover:bg-red-700"
                     >
                         <Plus className="mr-2 h-4 w-4" />

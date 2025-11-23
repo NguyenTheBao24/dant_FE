@@ -6,6 +6,7 @@ import { Badge } from "@/components/admin/ui/badge"
 import { AddTenantDialog } from "./dialogs/AddTenantDialog"
 import { EditTenantDialog } from "./dialogs/EditTenantDialog"
 import { TenantDetailsDialog } from "./dialogs/TenantDetailsDialog"
+import { UpdateRoomPriceDialog } from "./dialogs/UpdateRoomPriceDialog"
 import { TenantTable } from "./TenantTable"
 import { useRooms } from "@/hooks/useRooms.js"
 import { useTenantAccount } from "@/hooks/useTenantAccount.js"
@@ -34,6 +35,8 @@ export function CustomersTab({
     const [editingTenant, setEditingTenant] = useState<any | null>(null)
     const [isDetailsOpen, setIsDetailsOpen] = useState(false)
     const [viewingTenant, setViewingTenant] = useState<any | null>(null)
+    const [isPriceDialogOpen, setIsPriceDialogOpen] = useState(false)
+    const [priceUpdateTenant, setPriceUpdateTenant] = useState<any | null>(null)
 
     // Custom hooks
     const { availableRooms, isLoadingRooms } = useRooms(selectedHostel)
@@ -114,6 +117,20 @@ export function CustomersTab({
         })
     }
 
+    const handleUpdateRoomPrice = (tenant: any) => {
+        setPriceUpdateTenant(tenant)
+        setIsPriceDialogOpen(true)
+    }
+
+    const handlePriceUpdateSuccess = () => {
+        // Reload data hoặc cập nhật state nếu cần
+        // Có thể gọi lại API để lấy dữ liệu mới nhất
+        if (onEditTenant && priceUpdateTenant) {
+            // Trigger reload bằng cách cập nhật tenant
+            onEditTenant({ ...priceUpdateTenant, _refresh: true })
+        }
+    }
+
     return (
         <div className="space-y-8">
             <div className="flex items-center justify-between">
@@ -139,6 +156,7 @@ export function CustomersTab({
                             onViewDetails={openDetails}
                             onCreateAccount={handleCreateAccount}
                             hasAccount={hasAccount}
+                            onUpdateRoomPrice={handleUpdateRoomPrice}
                         />
                     </div>
                 </CardContent>
@@ -166,6 +184,13 @@ export function CustomersTab({
                 isOpen={isDetailsOpen}
                 onOpenChange={setIsDetailsOpen}
                 viewingTenant={viewingTenant}
+            />
+
+            <UpdateRoomPriceDialog
+                isOpen={isPriceDialogOpen}
+                onOpenChange={setIsPriceDialogOpen}
+                tenant={priceUpdateTenant}
+                onSuccess={handlePriceUpdateSuccess}
             />
         </div>
     )

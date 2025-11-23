@@ -1,6 +1,6 @@
 "use client"
 
-import { MoreHorizontal, Edit, Trash2, UserPlus, Eye } from "lucide-react"
+import { MoreHorizontal, Edit, Trash2, UserPlus, Eye, DollarSign } from "lucide-react"
 import { Button } from "@/components/admin/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/admin/ui/table"
 import { Badge } from "@/components/admin/ui/badge"
@@ -13,6 +13,7 @@ interface TenantTableProps {
     onViewDetails: (tenant: any) => void
     onCreateAccount: (tenant: any) => void
     hasAccount: (tenant: any) => boolean
+    onUpdateRoomPrice?: (tenant: any) => void
 }
 
 export function TenantTable({
@@ -21,7 +22,8 @@ export function TenantTable({
     onDeleteTenant,
     onViewDetails,
     onCreateAccount,
-    hasAccount
+    hasAccount,
+    onUpdateRoomPrice
 }: TenantTableProps) {
     return (
         <Table>
@@ -38,7 +40,7 @@ export function TenantTable({
             </TableHeader>
             <TableBody>
                 {filteredTenants.map((tenant, index) => (
-                    <TableRow key={tenant.id} className={`hover:bg-blue-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
+                    <TableRow key={`${tenant.id}-${tenant.room_number || tenant.roomNumber || index}`} className={`hover:bg-blue-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
                         <TableCell className="font-semibold text-gray-900 py-4">
                             <span>{tenant.name}</span>
                         </TableCell>
@@ -98,6 +100,16 @@ export function TenantTable({
                                             {hasAccount(tenant) ? 'Đã có tài khoản' : 'Cấp tài khoản'}
                                         </span>
                                     </DropdownMenuItem>
+
+                                    {onUpdateRoomPrice && (
+                                        <DropdownMenuItem
+                                            onClick={() => onUpdateRoomPrice(tenant)}
+                                            className="hover:bg-yellow-50"
+                                        >
+                                            <DollarSign className="mr-2 h-4 w-4 text-yellow-600" />
+                                            <span className="text-gray-700">Thay đổi giá phòng</span>
+                                        </DropdownMenuItem>
+                                    )}
 
                                     <DropdownMenuItem onClick={() => onDeleteTenant(tenant)} className="text-red-600 hover:bg-red-50">
                                         <Trash2 className="mr-2 h-4 w-4" />

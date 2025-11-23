@@ -8,7 +8,6 @@ import {
   Building2,
   PlusSquare,
   DollarSign,
-  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/admin/ui/button";
 import { Card, CardContent } from "@/components/admin/ui/card";
@@ -70,8 +69,8 @@ export function DashboardSidebar({
                     <div className="text-xs text-green-600 font-medium">
                       {selectedHostel?.rooms > 0
                         ? Math.round(
-                            (occupiedRoomsCount / selectedHostel.rooms) * 100
-                          )
+                          (occupiedRoomsCount / selectedHostel.rooms) * 100
+                        )
                         : 0}
                       %
                     </div>
@@ -80,14 +79,13 @@ export function DashboardSidebar({
                     <div
                       className="bg-green-500 h-2 rounded-full transition-all duration-500"
                       style={{
-                        width: `${
-                          selectedHostel?.rooms > 0
+                        width: `${selectedHostel?.rooms > 0
                             ? Math.round(
-                                (occupiedRoomsCount / selectedHostel.rooms) *
-                                  100
-                              )
+                              (occupiedRoomsCount / selectedHostel.rooms) *
+                              100
+                            )
                             : 0
-                        }%`,
+                          }%`,
                       }}
                     ></div>
                   </div>
@@ -108,11 +106,10 @@ export function DashboardSidebar({
           <nav className="space-y-3">
             <Button
               variant={activeTab === "overview" ? "default" : "ghost"}
-              className={`w-full justify-start h-12 transition-all duration-300 rounded-xl ${
-                activeTab === "overview"
+              className={`w-full justify-start h-12 transition-all duration-300 rounded-xl ${activeTab === "overview"
                   ? "bg-blue-600 text-white shadow-lg hover:shadow-xl"
                   : "hover:bg-gray-100 hover:shadow-md"
-              }`}
+                }`}
               onClick={() => onTabChange("overview")}
             >
               <LayoutDashboard className="mr-3 h-5 w-5" />
@@ -121,11 +118,10 @@ export function DashboardSidebar({
 
             <Button
               variant={activeTab === "add-hostel" ? "default" : "ghost"}
-              className={`w-full justify-start h-12 transition-all duration-300 rounded-xl ${
-                activeTab === "add-hostel"
+              className={`w-full justify-start h-12 transition-all duration-300 rounded-xl ${activeTab === "add-hostel"
                   ? "bg-blue-600 text-white shadow-lg hover:shadow-xl"
                   : "hover:bg-gray-100 hover:shadow-md"
-              }`}
+                }`}
               onClick={() => onTabChange("add-hostel")}
             >
               <PlusSquare className="mr-3 h-5 w-5" />
@@ -134,11 +130,10 @@ export function DashboardSidebar({
 
             <Button
               variant={activeTab === "customers" ? "default" : "ghost"}
-              className={`w-full justify-start h-12 transition-all duration-300 rounded-xl ${
-                activeTab === "customers"
+              className={`w-full justify-start h-12 transition-all duration-300 rounded-xl ${activeTab === "customers"
                   ? "bg-blue-600 text-white shadow-lg hover:shadow-xl"
                   : "hover:bg-gray-100 hover:shadow-md"
-              }`}
+                }`}
               onClick={() => onTabChange("customers")}
             >
               <Users className="mr-3 h-5 w-5" />
@@ -147,11 +142,10 @@ export function DashboardSidebar({
 
             <Button
               variant={activeTab === "contact" ? "default" : "ghost"}
-              className={`w-full justify-start h-12 transition-all duration-300 rounded-xl ${
-                activeTab === "contact"
+              className={`w-full justify-start h-12 transition-all duration-300 rounded-xl ${activeTab === "contact"
                   ? "bg-blue-600 text-white shadow-lg hover:shadow-xl"
                   : "hover:bg-gray-100 hover:shadow-md"
-              }`}
+                }`}
               onClick={() => onTabChange("contact")}
             >
               <UserCheck className="mr-3 h-5 w-5" />
@@ -160,11 +154,10 @@ export function DashboardSidebar({
 
             <Button
               variant={activeTab === "expenses" ? "default" : "ghost"}
-              className={`w-full justify-start h-12 transition-all duration-300 rounded-xl ${
-                activeTab === "expenses"
+              className={`w-full justify-start h-12 transition-all duration-300 rounded-xl ${activeTab === "expenses"
                   ? "bg-blue-600 text-white shadow-lg hover:shadow-xl"
                   : "hover:bg-gray-100 hover:shadow-md"
-              }`}
+                }`}
               onClick={() => onTabChange("expenses")}
             >
               <DollarSign className="mr-3 h-5 w-5" />
@@ -173,32 +166,14 @@ export function DashboardSidebar({
 
             <Button
               variant={activeTab === "notifications" ? "default" : "ghost"}
-              className={`w-full justify-start h-12 transition-all duration-300 rounded-xl ${
-                activeTab === "notifications"
+              className={`w-full justify-start h-12 transition-all duration-300 rounded-xl ${activeTab === "notifications"
                   ? "bg-blue-600 text-white shadow-lg hover:shadow-xl"
                   : "hover:bg-gray-100 hover:shadow-md"
-              }`}
+                }`}
               onClick={() => onTabChange("notifications")}
             >
               <Bell className="mr-3 h-5 w-5" />
               <span className="font-semibold">Thông báo</span>
-            </Button>
-
-            {/* Divider */}
-            <div className="my-4 border-t border-gray-200"></div>
-
-            {/* Reset Invoices - Utility tool */}
-            <Button
-              variant={activeTab === "reset-invoices" ? "default" : "ghost"}
-              className={`w-full justify-start h-12 transition-all duration-300 rounded-xl ${
-                activeTab === "reset-invoices"
-                  ? "bg-orange-600 text-white shadow-lg hover:shadow-xl"
-                  : "hover:bg-orange-50 hover:shadow-md text-orange-600"
-              }`}
-              onClick={() => onTabChange("reset-invoices")}
-            >
-              <RotateCcw className="mr-3 h-5 w-5" />
-              <span className="font-semibold">Reset Hóa Đơn</span>
             </Button>
           </nav>
         </div>

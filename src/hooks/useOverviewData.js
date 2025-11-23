@@ -2,7 +2,8 @@ import { useState, useEffect } from "react"
 import { listCanHoByToaNha, determineRoomType } from "@/services/can-ho.service"
 import { listHopDongByToaNha } from "@/services/hop-dong.service"
 import { aggregateExpensesByMonth, getCurrentMonthExpenses } from "@/utils/expenses.utils"
-import { aggregateRevenueByMonth, buildMonthlyStats } from "@/utils/revenue.utils"
+import { buildMonthlyStats } from "@/utils/revenue.utils"
+import { tinhDoanhThuTheoThangTuHoaDon, tinhDoanhThuThang } from "@/services/hoa-don.service"
 import { currentYearMonth } from "@/utils/months.utils"
 
 export function useOverviewData(selectedHostel, occupiedRoomsCount) {
@@ -145,7 +146,17 @@ export function useOverviewData(selectedHostel, occupiedRoomsCount) {
                 console.log('Final room revenue data length:', roomRevenueData.length)
 
                 setRoomRevenues(roomRevenueData)
-                setTotalMonthlyRevenue(totalRevenue)
+
+                // Tính doanh thu tháng hiện tại từ hóa đơn đã thanh toán
+                const currentDate = new Date()
+                const currentYear = currentDate.getFullYear()
+                const currentMonth = currentDate.getMonth() + 1
+                const currentMonthRevenue = await tinhDoanhThuThang(
+                    selectedHostel.id,
+                    currentYear,
+                    currentMonth
+                )
+                setTotalMonthlyRevenue(currentMonthRevenue)
 
                 // Tính toán doanh thu theo loại phòng
                 const revenueByType = {}
@@ -196,8 +207,8 @@ export function useOverviewData(selectedHostel, occupiedRoomsCount) {
                 // Tính chi phí tháng hiện tại để hiển thị thẻ "Chi phí tháng" theo YYYY-MM
                 try { setCurrentMonthExpenses(getCurrentMonthExpenses(allExpenses)) } catch { }
 
-                // 2) Doanh thu theo tháng: duyệt tất cả hợp đồng theo từng tháng hiệu lực
-                const revenueByMonthMap = aggregateRevenueByMonth(hostelContracts, true)
+                // 2) Doanh thu theo tháng: chỉ tính từ các hóa đơn đã thanh toán thành công
+                const revenueByMonthMap = await tinhDoanhThuTheoThangTuHoaDon(selectedHostel.id) || {}
 
                 // 3) Dựng mảng thống kê 12 tháng gần nhất
                 const monthlyStatsData = buildMonthlyStats(

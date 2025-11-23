@@ -1,19 +1,19 @@
 const StatItem = ({ value, label, color }) => {
     return (
-        <div className="text-center group">
-            <div className={`text-4xl md:text-5xl font-bold ${color} mb-2 group-hover:scale-110 transition-transform duration-300`}>
+        <div className="text-center">
+            <div className={`text-4xl md:text-5xl font-bold ${color} mb-2`}>
                 {value}
             </div>
-            <div className="text-sm text-blue-200 opacity-80">{label}</div>
+            <div className="text-sm text-slate-600">{label}</div>
         </div>
     );
 };
 
 const StatsGrid = ({ stats }) => {
     const defaultStats = [
-        { value: "50+", label: "Phòng có sẵn", color: "text-yellow-300" },
-        { value: "24/7", label: "Hỗ trợ", color: "text-emerald-300" },
-        { value: "100%", label: "Hài lòng", color: "text-pink-300" }
+        { value: "50+", label: "Phòng có sẵn", color: "text-slate-900" },
+        { value: "24/7", label: "Hỗ trợ", color: "text-slate-900" },
+        { value: "100%", label: "Hài lòng", color: "text-slate-900" }
     ];
 
     const statsToRender = stats || defaultStats;

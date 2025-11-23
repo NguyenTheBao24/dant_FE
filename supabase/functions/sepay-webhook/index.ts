@@ -1,5 +1,8 @@
+// @ts-ignore - Deno types are available at runtime
 /// <reference types="https://deno.land/x/types/index.d.ts" />
+// @ts-ignore - Deno std library
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// @ts-ignore - ESM module
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -43,6 +46,7 @@ serve(async req => {
       } else if (authHeader.startsWith("Bearer ")) {
         // Nếu là Bearer token, có thể dùng làm API key nếu SEPAY_API_KEY = anon key
         const bearerToken = authHeader.replace("Bearer ", "");
+        // @ts-ignore - Deno is available at runtime
         const expectedApiKey = Deno.env.get("SEPAY_API_KEY");
         if (expectedApiKey && bearerToken === expectedApiKey) {
           apiKey = bearerToken;
@@ -52,6 +56,7 @@ serve(async req => {
 
     // Nếu chưa có API key từ Authorization, thử lấy từ apikey header hoặc query
     if (!apiKey) {
+      // @ts-ignore - Deno is available at runtime
       const expectedApiKey = Deno.env.get("SEPAY_API_KEY");
       // Kiểm tra apikey header hoặc query parameter (để bypass platform auth)
       const apikeyValue = apikeyFromHeader || apikeyFromQuery;
@@ -78,6 +83,7 @@ serve(async req => {
       );
     }
 
+    // @ts-ignore - Deno is available at runtime
     const expectedApiKey = Deno.env.get("SEPAY_API_KEY");
 
     if (!expectedApiKey || apiKey !== expectedApiKey) {
@@ -95,9 +101,13 @@ serve(async req => {
     console.log("Received SePay webhook:", payload);
 
     // Initialize Supabase client
+    // @ts-ignore - Deno is available at runtime
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    // @ts-ignore - Deno is available at runtime
     const supabaseServiceKey =
+      // @ts-ignore - Deno is available at runtime
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
+      // @ts-ignore - Deno is available at runtime
       Deno.env.get("SERVICE_ROLE_KEY");
 
     // Debug: Log environment variables (không log full key để bảo mật)
@@ -189,25 +199,38 @@ serve(async req => {
 
     // Parse invoice identifier từ payload SePay
     // SePay gửi invoice ID trong các field: content, description, hoặc des
-    // Format SePay: "HD20250101000001 FT25321859460704 Ma giao dich Trace866229 Trace 866229"
-    // Cần extract invoice ID (thường là phần đầu tiên, format HD...)
+    // Format cũ: "HD20250101000001 FT25321859460704 Ma giao dich Trace866229 Trace 866229"
+    // Format mới (VPBank): "NHAN TU 1013913921 TRACE 106398 ND MBVCB.11850114728.5327BFTVG2JIB9N6. HD20251123000001.CT tu..."
+    // Cần extract invoice ID (format HD + 14 digits = HDYYYYMMDDXXXXXX)
     let invoiceIdentifier: string | null = null;
 
     // Thử các field khác nhau từ SePay payload
     const content = payload.content || payload.description || payload.des || "";
 
     if (content) {
-      // Extract invoice ID từ content (thường là phần đầu tiên, format HD...)
-      // Ví dụ: "HD20250101000001 FT25321859460704..." -> "HD20250101000001"
-      const match = content.match(/^(HD\d+)/);
+      // Extract invoice ID từ content (có thể ở đầu hoặc giữa chuỗi)
+      // Format: HD + 14 digits (HDYYYYMMDDXXXXXX), ví dụ: HD20251123000001
+      // Có thể có dấu chấm sau mã hóa đơn (HD20251123000001.CT)
+      const match = content.match(/HD\d{14}(?:\.\w+)?/);
       if (match) {
-        invoiceIdentifier = match[1];
+        // Lấy phần mã hóa đơn (bỏ phần mở rộng sau dấu chấm nếu có)
+        invoiceIdentifier = match[0].split('.')[0];
+        console.log("Extracted invoice ID from content:", invoiceIdentifier);
       } else {
-        // Nếu không match format HD..., thử lấy phần đầu tiên
-        invoiceIdentifier = content.split(/\s+/)[0].trim();
+        // Fallback: tìm bất kỳ pattern HD + digits nào
+        const fallbackMatch = content.match(/HD\d+/);
+        if (fallbackMatch) {
+          invoiceIdentifier = fallbackMatch[0];
+          console.log("Extracted invoice ID (fallback):", invoiceIdentifier);
+        } else {
+          // Nếu không match format HD..., thử lấy phần đầu tiên
+          invoiceIdentifier = content.split(/\s+/)[0].trim();
+          console.log("Using first word as invoice ID:", invoiceIdentifier);
+        }
       }
     } else if (payload.invoiceId) {
       invoiceIdentifier = String(payload.invoiceId).trim();
+      console.log("Using invoiceId from payload:", invoiceIdentifier);
     }
 
     if (!invoiceIdentifier) {
@@ -224,7 +247,7 @@ serve(async req => {
 
     // Tìm hóa đơn bằng id (chuỗi)
     let existingInvoice = null;
-    let findError = null;
+    let findError: { message?: string; code?: string } | null = null;
 
     // Tìm bằng id (chuỗi như "HD012312321")
     console.log("Trying to find invoice by id:", invoiceIdentifier);
@@ -236,7 +259,7 @@ serve(async req => {
 
     if (error) {
       console.error("Error finding by id:", error);
-      findError = error;
+      findError = error as { message?: string; code?: string };
     } else if (data) {
       console.log("Found invoice by id:", data);
       existingInvoice = data;
@@ -260,7 +283,7 @@ serve(async req => {
             identifier: invoiceIdentifier,
             details:
               "Service role key may be missing or invalid. Please check SUPABASE_SERVICE_ROLE_KEY secret.",
-            debug: findError.message,
+            debug: findError.message || "Unknown error",
           }),
           {
             status: 500,

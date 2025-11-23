@@ -46,35 +46,32 @@ const Header = ({ onScrollToSection }) => {
 
   return (
     <header className="fixed w-full top-0 z-50">
-      {/* Nền glass morphism với viền gradient */}
-      <div className="bg-white/80 backdrop-blur-lg border-b border-white/20 shadow-lg shadow-indigo-500/10">
+      {/* Nền tối giản */}
+      <div className="bg-white border-b border-slate-200 shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            {/* Logo với styling nâng cao */}
+            {/* Logo */}
             <button
               onClick={handleLogoClick}
-              className="group flex items-center space-x-4 hover:scale-105 transition-all duration-300"
+              className="flex items-center space-x-3 hover:opacity-80 transition-opacity duration-200"
             >
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full blur-sm opacity-30 group-hover:opacity-50 transition-opacity"></div>
-                <img
-                  src={logoHome}
-                  alt="Nhà Trọ Logo"
-                  className="relative w-16 h-16 rounded-full shadow-lg"
-                />
-              </div>
+              <img
+                src={logoHome}
+                alt="Nhà Trọ Logo"
+                className="w-12 h-12 rounded-full"
+              />
               <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-700 via-purple-700 to-pink-700 bg-clip-text text-transparent">
+                <h1 className="text-lg font-bold text-slate-900">
                   Nhà Trọ Cao Cấp
                 </h1>
-                <p className="text-sm bg-gradient-to-r from-gray-600 to-indigo-600 bg-clip-text text-transparent font-medium">
+                <p className="text-xs text-slate-500 font-medium">
                   Premium Boarding House
                 </p>
               </div>
             </button>
 
-            {/* Navigation desktop với styling hiện đại */}
-            <nav className="hidden md:flex items-center space-x-2">
+            {/* Navigation desktop */}
+            <nav className="hidden md:flex items-center space-x-1">
               {[
                 { label: 'Trang chủ', section: 'hero' },
                 { label: 'Các loại phòng', section: 'rooms' },
@@ -84,42 +81,36 @@ const Header = ({ onScrollToSection }) => {
                 <button
                   key={index}
                   onClick={() => handleScrollToSection(item.section)}
-                  className="group relative px-4 py-2 text-gray-700 hover:text-white font-medium transition-all duration-300 rounded-lg overflow-hidden"
+                  className="px-4 py-2 text-slate-700 hover:text-slate-900 font-medium transition-colors duration-200 rounded-lg hover:bg-slate-50"
                 >
-                  <span className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></span>
-                  <span className="relative z-10">
-                    {item.label}
-                  </span>
+                  {item.label}
                 </button>
               ))}
 
-              {/* Nút đăng nhập với styling đặc biệt */}
+              {/* Nút đăng nhập */}
               <button
                 onClick={() => navigate('/auth/login')}
-                className="group relative ml-4 px-6 py-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white font-semibold rounded-xl overflow-hidden shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/40 transition-all duration-300"
+                className="ml-4 px-5 py-2.5 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 transition-colors duration-200"
               >
-                <span className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-                <span className="relative z-10">
-                  Đăng nhập
-                </span>
+                Đăng nhập
               </button>
             </nav>
 
-            {/* Nút menu mobile với styling */}
+            {/* Nút menu mobile */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden p-3 rounded-xl bg-white/60 backdrop-blur-sm border border-white/30 hover:bg-white/80 transition-all duration-300 shadow-lg"
+              className="md:hidden p-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors duration-200"
             >
-              <svg className="w-6 h-6 text-indigo-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
           </div>
 
-          {/* Menu mobile nâng cao */}
+          {/* Menu mobile */}
           {isMenuOpen && (
-            <div className="md:hidden mt-6 py-6 bg-white/90 backdrop-blur-lg rounded-2xl border border-white/30 shadow-xl">
-              <div className="flex flex-col space-y-3">
+            <div className="md:hidden mt-4 py-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+              <div className="flex flex-col space-y-1">
                 {[
                   { label: 'Trang chủ', section: 'hero' },
                   { label: 'Các loại phòng', section: 'rooms' },
@@ -129,16 +120,16 @@ const Header = ({ onScrollToSection }) => {
                   <button
                     key={index}
                     onClick={() => handleScrollToSection(item.section)}
-                    className="group flex items-center justify-center px-4 py-3 mx-2 text-gray-700 hover:text-white font-medium transition-all duration-300 rounded-xl hover:bg-gradient-to-r hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500"
+                    className="px-4 py-2.5 text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-medium transition-colors duration-200 rounded-lg text-left"
                   >
                     {item.label}
                   </button>
                 ))}
 
-                <div className="px-2 pt-4">
+                <div className="px-4 pt-3 border-t border-slate-200 mt-2">
                   <button
                     onClick={() => navigate('/auth/login')}
-                    className="w-full py-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center"
+                    className="w-full py-2.5 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 transition-colors duration-200"
                   >
                     Đăng nhập
                   </button>

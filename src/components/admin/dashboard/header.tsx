@@ -28,31 +28,47 @@ export function DashboardHeader({ selectedHostel, hostels, onHostelChange, }: He
 
                     <div className="flex items-center space-x-3">
                         <div className="h-6 w-px bg-gray-300"></div>
-                        <Select
-                            value={selectedHostel?.id.toString()}
-                            onValueChange={(value) => {
-                                const hostel = hostels.find((h) => h.id === Number.parseInt(value))
-                                if (hostel) onHostelChange(hostel)
-                            }}
-                        >
-                            <SelectTrigger className="w-72 border-slate-200 bg-white/50 backdrop-blur-sm hover:bg-white/80 transition-all duration-200">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent
-                                position="item-aligned"
-                                side="bottom"
-                                align="start"
-                                avoidCollisions={false} className="border-slate-200 bg-white/95 backdrop-blur-md translate-y-10 ">
-                                {hostels.map((hostel) => (
-                                    <SelectItem key={hostel.id} value={hostel.id.toString()} className="hover:bg-slate-50">
-                                        <div className="flex flex-col py-1">
-                                            <span className="font-medium text-slate-900">{hostel.name}</span>
-                                            <span className="text-xs text-slate-500">{hostel.address}</span>
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        {hostels.length > 0 ? (
+                            <Select
+                                value={selectedHostel?.id?.toString() || ""}
+                                onValueChange={(value) => {
+                                    // ID có thể là string (TN0000000001) hoặc number, so sánh linh hoạt
+                                    const hostel = hostels.find((h) => {
+                                        const hId = String(h.id || "")
+                                        const valueStr = String(value || "")
+                                        return hId === valueStr
+                                    })
+                                    if (hostel) {
+                                        console.log('Selected hostel:', hostel)
+                                        onHostelChange(hostel)
+                                    } else {
+                                        console.warn('Hostel not found for value:', value, 'Available hostels:', hostels.map(h => ({ id: h.id, name: h.name })))
+                                    }
+                                }}
+                            >
+                                <SelectTrigger className="w-72 border-slate-200 bg-white/50 backdrop-blur-sm hover:bg-white/80 transition-all duration-200">
+                                    <SelectValue placeholder={selectedHostel?.name || "Chọn khu trọ"} />
+                                </SelectTrigger>
+                                <SelectContent
+                                    position="item-aligned"
+                                    side="bottom"
+                                    align="start"
+                                    avoidCollisions={false} className="border-slate-200 bg-white/95 backdrop-blur-md translate-y-10 ">
+                                    {hostels.map((hostel) => (
+                                        <SelectItem key={String(hostel.id)} value={String(hostel.id)} className="hover:bg-slate-50">
+                                            <div className="flex flex-col py-1">
+                                                <span className="font-medium text-slate-900">{hostel.name || `Khu trọ ${hostel.id}`}</span>
+                                                <span className="text-xs text-slate-500">{hostel.address || "Chưa có địa chỉ"}</span>
+                                            </div>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        ) : (
+                            <div className="px-4 py-2 text-sm text-gray-500 border border-gray-200 rounded-md bg-gray-50">
+                                Chưa có khu trọ
+                            </div>
+                        )}
                     </div>
                 </div>
 
