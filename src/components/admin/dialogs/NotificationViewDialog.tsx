@@ -7,7 +7,6 @@ import { MessageSquare, Clock, CheckCircle, AlertCircle, User, Phone, Mail, Eye 
 import { getPhanHoiByThongBao } from '@/services/phan-hoi-thong-bao.service'
 // @ts-ignore
 import { useResponseRealtime } from '@/hooks/useNotificationRealtime'
-// @ts-ignore
 import {
     getNotificationStatusLabel,
     getNotificationStatusColor,
