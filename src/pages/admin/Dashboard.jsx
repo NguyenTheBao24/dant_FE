@@ -28,6 +28,7 @@ import { listHopDongByToaNha } from "@/services/hop-dong.service";
 import { getThongBaoByToaNha } from "@/services/thong-bao.service";
 import { listHoaDonChuaThanhToanTrongThang } from "@/services/hoa-don.service";
 import { NotificationManagerDialog } from "@/components/manager/dialogs/NotificationManagerDialog";
+import { NotificationViewDialog } from "@/components/admin/dialogs/NotificationViewDialog";
 import { useManagerNotificationRealtime } from "@/hooks/useNotificationRealtime";
 import { InvoiceInfoDialog } from "@/components/admin/dashboard/dialogs/InvoiceInfoDialog";
 import {
@@ -63,7 +64,10 @@ export default function Dashboard() {
     if (n?.type === "order") {
       setDialogState({ open: true, kind: "invoice", data: n._source || n });
     } else {
-      setDialogState({ open: true, kind: "chat", data: n._source || n });
+      // Admin chỉ xem thông báo, không thể nhắn tin
+      // Truyền đầy đủ dữ liệu từ _source
+      const notificationData = n._source || n;
+      setDialogState({ open: true, kind: "chat", data: notificationData });
     }
   };
 
@@ -426,6 +430,8 @@ export default function Dashboard() {
         message: n.noi_dung || "",
         time: new Date(n.ngay_tao).toLocaleDateString("vi-VN"),
         type: n.trang_thai === "chua_xu_ly" ? "report" : "employee",
+        loai_thong_bao: n.loai_thong_bao || "khac",
+        trang_thai: n.trang_thai,
         _source: n,
       }));
 
@@ -858,7 +864,8 @@ export default function Dashboard() {
         </main>
       </div>
       {/* Dialogs for notifications */}
-      <NotificationManagerDialog
+      {/* Admin chỉ xem thông báo, không thể nhắn tin */}
+      <NotificationViewDialog
         isOpen={dialogState.open && dialogState.kind === "chat"}
         onOpenChange={o => setDialogState(prev => ({ ...prev, open: o }))}
         notification={dialogState.data}
