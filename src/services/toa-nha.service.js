@@ -222,10 +222,55 @@ export async function deleteToaNha(id) {
             throw new Error(`Cannot get can_ho list: ${canHoError.message}`)
         }
 
-        // Bước 2: Xóa tất cả hop_dong và can_ho liên quan
+        // Bước 2: Xóa tất cả các bản ghi liên quan theo thứ tự đúng để tránh foreign key constraint
         if (canHoList && canHoList.length > 0) {
             console.log(`Step 2: Found ${canHoList.length} can_ho, deleting related records...`)
 
+            const canHoIds = canHoList.map(ch => ch.id)
+
+            // 2.1: Xóa phan_hoi_thong_bao liên quan đến thong_bao của các can_ho này
+            try {
+                const { data: thongBaoList, error: tbError } = await supabase
+                    .from('thong_bao')
+                    .select('id')
+                    .in('can_ho_id', canHoIds)
+
+                if (!tbError && thongBaoList && thongBaoList.length > 0) {
+                    const thongBaoIds = thongBaoList.map(tb => tb.id)
+                    console.log(`  Found ${thongBaoIds.length} thong_bao, deleting phan_hoi_thong_bao...`)
+
+                    const { error: delPhError } = await supabase
+                        .from('phan_hoi_thong_bao')
+                        .delete()
+                        .in('thong_bao_id', thongBaoIds)
+
+                    if (delPhError) {
+                        console.warn(`    Failed to delete phan_hoi_thong_bao:`, delPhError)
+                    } else {
+                        console.log(`    Successfully deleted phan_hoi_thong_bao`)
+                    }
+                }
+            } catch (phError) {
+                console.warn('Error deleting phan_hoi_thong_bao:', phError)
+            }
+
+            // 2.2: Xóa thong_bao liên quan đến can_ho
+            try {
+                const { error: delTbError } = await supabase
+                    .from('thong_bao')
+                    .delete()
+                    .in('can_ho_id', canHoIds)
+
+                if (delTbError) {
+                    console.warn(`    Failed to delete thong_bao by can_ho_id:`, delTbError)
+                } else {
+                    console.log(`    Successfully deleted thong_bao by can_ho_id`)
+                }
+            } catch (tbError) {
+                console.warn('Error deleting thong_bao by can_ho_id:', tbError)
+            }
+
+            // 2.3: Xóa hoa_don liên quan đến hop_dong
             for (const canHo of canHoList) {
                 try {
                     // Lấy danh sách hop_dong liên quan đến căn hộ này
@@ -235,22 +280,42 @@ export async function deleteToaNha(id) {
                         .eq('can_ho_id', canHo.id)
 
                     if (!hdError && hopDongList && hopDongList.length > 0) {
-                        console.log(`  Deleting ${hopDongList.length} hop_dong for can_ho ${canHo.id}`)
+                        const hopDongIds = hopDongList.map(hd => hd.id)
+                        console.log(`  Found ${hopDongIds.length} hop_dong for can_ho ${canHo.id}, deleting hoa_don...`)
+
+                        // Xóa tất cả hoa_don liên quan đến hop_dong
+                        const { error: delHdError } = await supabase
+                            .from('hoa_don')
+                            .delete()
+                            .in('hop_dong_id', hopDongIds)
+
+                        if (delHdError) {
+                            console.warn(`    Failed to delete hoa_don for can_ho ${canHo.id}:`, delHdError)
+                        } else {
+                            console.log(`    Successfully deleted hoa_don for can_ho ${canHo.id}`)
+                        }
 
                         // Xóa tất cả hop_dong liên quan
+                        console.log(`  Deleting ${hopDongIds.length} hop_dong for can_ho ${canHo.id}`)
                         for (const hd of hopDongList) {
-                            const { error: delHdError } = await supabase
+                            const { error: delHdError2 } = await supabase
                                 .from('hop_dong')
                                 .delete()
                                 .eq('id', hd.id)
 
-                            if (delHdError) {
-                                console.warn(`    Failed to delete hop_dong ${hd.id}:`, delHdError)
+                            if (delHdError2) {
+                                console.warn(`    Failed to delete hop_dong ${hd.id}:`, delHdError2)
                             }
                         }
                     }
+                } catch (hdError) {
+                    console.warn(`Error processing hop_dong for can_ho ${canHo.id}:`, hdError)
+                }
+            }
 
-                    // Xóa căn hộ
+            // 2.4: Xóa căn hộ
+            for (const canHo of canHoList) {
+                try {
                     console.log(`  Deleting can_ho ${canHo.id}`)
                     const { error: delCanHoError } = await supabase
                         .from('can_ho')
@@ -267,9 +332,58 @@ export async function deleteToaNha(id) {
                 }
             }
 
-            console.log('Successfully deleted all can_ho and related hop_dong')
+            console.log('Successfully deleted all can_ho and related records')
         } else {
             console.log('No can_ho found for this toa_nha')
+        }
+
+        // Bước 2.5: Xóa các bản ghi liên quan đến toa_nha (không phụ thuộc can_ho)
+        try {
+            // Xóa chi_tieu
+            const { error: delCtError } = await supabase
+                .from('chi_tieu')
+                .delete()
+                .eq('toa_nha_id', idValue)
+
+            if (delCtError) {
+                console.warn(`Failed to delete chi_tieu:`, delCtError)
+            } else {
+                console.log(`Successfully deleted chi_tieu`)
+            }
+        } catch (ctError) {
+            console.warn('Error deleting chi_tieu:', ctError)
+        }
+
+        try {
+            // Xóa quan_tam
+            const { error: delQtError } = await supabase
+                .from('quan_tam')
+                .delete()
+                .eq('toa_nha_id', idValue)
+
+            if (delQtError) {
+                console.warn(`Failed to delete quan_tam:`, delQtError)
+            } else {
+                console.log(`Successfully deleted quan_tam`)
+            }
+        } catch (qtError) {
+            console.warn('Error deleting quan_tam:', qtError)
+        }
+
+        try {
+            // Xóa thong_bao còn lại (nếu có tham chiếu trực tiếp đến toa_nha)
+            const { error: delTbError2 } = await supabase
+                .from('thong_bao')
+                .delete()
+                .eq('toa_nha_id', idValue)
+
+            if (delTbError2) {
+                console.warn(`Failed to delete remaining thong_bao:`, delTbError2)
+            } else {
+                console.log(`Successfully deleted remaining thong_bao`)
+            }
+        } catch (tbError2) {
+            console.warn('Error deleting remaining thong_bao:', tbError2)
         }
 
         // Bước 3: Xóa toa_nha
