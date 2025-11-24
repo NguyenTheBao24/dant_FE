@@ -38,17 +38,8 @@ interface InvoiceRecord {
   };
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  chua_tt: "Chưa thanh toán",
-  da_thanh_toan: "Đã thanh toán",
-  qua_han: "Quá hạn",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  chua_tt: "bg-yellow-100 text-yellow-800",
-  da_thanh_toan: "bg-green-100 text-green-800",
-  qua_han: "bg-red-100 text-red-800",
-};
+// @ts-ignore
+import { getPaymentStatusLabel, getPaymentStatusColor } from "@/utils/translations"
 
 export function InvoicesPage({ selectedHostel }: InvoicesPageProps) {
   const currentMonthValue = new Date().toISOString().slice(0, 7);
@@ -352,7 +343,7 @@ export function InvoicesPage({ selectedHostel }: InvoicesPageProps) {
                 )}
                 {statusFilter !== "all" && (
                   <Badge variant="secondary" className="text-xs">
-                    {STATUS_LABELS[statusFilter] || statusFilter}
+                    {getPaymentStatusLabel(statusFilter)}
                     <button
                       onClick={() => setStatusFilter("all")}
                       className="ml-1 hover:text-gray-900"
@@ -413,12 +404,10 @@ export function InvoicesPage({ selectedHostel }: InvoicesPageProps) {
                         </h3>
                         <Badge
                           className={
-                            STATUS_COLORS[invoice.trang_thai] ||
-                            "bg-gray-100 text-gray-800"
+                            getPaymentStatusColor(invoice.trang_thai)
                           }
                         >
-                          {STATUS_LABELS[invoice.trang_thai] ||
-                            invoice.trang_thai}
+                          {getPaymentStatusLabel(invoice.trang_thai)}
                         </Badge>
                       </div>
                       <p className="text-sm text-gray-600 mt-1">

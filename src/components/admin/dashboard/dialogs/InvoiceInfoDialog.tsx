@@ -2,6 +2,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/a
 import { Card, CardContent } from '@/components/admin/ui/card'
 import { Badge } from '@/components/admin/ui/badge'
 import { Receipt } from 'lucide-react'
+// @ts-ignore
+import { getPaymentStatusLabel, getPaymentStatusColor } from '@/utils/translations'
 
 interface InvoiceInfoDialogProps {
     isOpen: boolean
@@ -44,8 +46,8 @@ export function InvoiceInfoDialog({ isOpen, onOpenChange, invoice }: InvoiceInfo
                         </div>
                         <div className="flex justify-between text-sm">
                             <span className="text-gray-600">Trạng thái:</span>
-                            <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">
-                                {invoice.trang_thai}
+                            <Badge variant="outline" className={getPaymentStatusColor(invoice.trang_thai)}>
+                                {getPaymentStatusLabel(invoice.trang_thai)}
                             </Badge>
                         </div>
                     </CardContent>

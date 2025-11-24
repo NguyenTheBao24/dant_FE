@@ -24,11 +24,16 @@ import {
   Clock,
   AlertCircle,
   Download,
+  Send,
 } from "lucide-react";
 // @ts-ignore
 import { getInvoiceDetails } from "@/services/employ-invoice.service";
 import { generateAndDownloadPDF } from "@/utils/pdf.utils";
 import { buildInvoiceHtml } from "@/utils/invoice-template";
+// @ts-ignore
+import { createThongBao } from "@/services/thong-bao.service";
+// @ts-ignore
+import { supabase } from "@/services/supabase-client";
 
 interface ManagerInvoiceDetailDialogProps {
   isOpen: boolean;
@@ -55,6 +60,7 @@ export function ManagerInvoiceDetailDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isSendingNotification, setIsSendingNotification] = useState(false);
 
   useEffect(() => {
     if (isOpen && invoiceId) {
@@ -129,6 +135,87 @@ export function ManagerInvoiceDetailDialog({
       alert(err?.message || "Không thể tải hóa đơn, vui lòng thử lại");
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  const handleSendPaymentNotification = async () => {
+    if (!invoiceDetails?.invoice) {
+      alert("Không có đủ thông tin để gửi thông báo");
+      return;
+    }
+
+    setIsSendingNotification(true);
+    try {
+      // Lấy thông tin hợp đồng và khách thuê từ database
+      const hopDongId = invoiceDetails.invoice.hop_dong_id;
+      if (!hopDongId) {
+        alert("Không tìm thấy thông tin hợp đồng");
+        setIsSendingNotification(false);
+        return;
+      }
+
+      // Query hợp đồng với thông tin khách thuê và căn hộ
+      const { data: hopDong, error: hopDongError } = await supabase
+        .from("hop_dong")
+        .select(
+          "*, khach_thue:khach_thue_id(id, ho_ten, sdt), can_ho:can_ho_id(id, so_can, toa_nha_id)"
+        )
+        .eq("id", hopDongId)
+        .single();
+
+      if (hopDongError || !hopDong) {
+        console.error("Error fetching hop_dong:", hopDongError);
+        alert("Không thể lấy thông tin hợp đồng");
+        setIsSendingNotification(false);
+        return;
+      }
+
+      const khachThue = hopDong.khach_thue;
+      const canHo = hopDong.can_ho;
+      const toaNhaId = selectedHostel?.id || canHo?.toa_nha_id;
+
+      if (!khachThue?.id || !toaNhaId) {
+        alert("Không tìm thấy thông tin khách thuê hoặc tòa nhà");
+        setIsSendingNotification(false);
+        return;
+      }
+
+      const tenantName = khachThue.ho_ten || "Khách thuê";
+      const roomNumber = canHo?.so_can || "N/A";
+      const invoiceId = invoiceDetails.invoice.id;
+      const totalAmount = invoiceDetails.invoice.so_tien || 0;
+      const formattedAmount = new Intl.NumberFormat("vi-VN").format(totalAmount);
+      const hostelName =
+        selectedHostel?.ten_toa ||
+        selectedHostel?.ten ||
+        selectedHostel?.name ||
+        "Khu trọ";
+
+      // Tạo nội dung thông báo
+      const tieuDe = `Thông báo đóng tiền phòng - Hóa đơn ${invoiceId}`;
+      const noiDung = `Kính gửi ${tenantName},\n\nBạn có hóa đơn cần thanh toán:\n\n- Mã hóa đơn: ${invoiceId}\n- Phòng: ${roomNumber}\n- Khu trọ: ${hostelName}\n- Tổng tiền: ${formattedAmount}₫\n- Ngày tạo: ${formatDate(invoiceDetails.invoice.ngay_tao)}\n\nVui lòng thanh toán sớm để tránh phát sinh phí trễ hạn.\n\nTrân trọng,\nQuản lý khu trọ`;
+
+      // Tạo thông báo trong hệ thống
+      const notificationData = {
+        khach_thue_id: khachThue.id,
+        toa_nha_id: toaNhaId,
+        can_ho_id: canHo?.id || null,
+        tieu_de: tieuDe,
+        noi_dung: noiDung,
+        loai_thong_bao: "thanh_toan",
+      };
+
+      await createThongBao(notificationData);
+
+      alert("Đã gửi thông báo thành công đến khách thuê!");
+    } catch (err: any) {
+      console.error("Error sending payment notification:", err);
+      alert(
+        err?.message ||
+        "Không thể gửi thông báo. Vui lòng thử lại sau."
+      );
+    } finally {
+      setIsSendingNotification(false);
     }
   };
 
@@ -325,6 +412,18 @@ export function ManagerInvoiceDetailDialog({
             <Button variant="outline" onClick={onClose}>
               Đóng
             </Button>
+            {invoiceDetails?.invoice.trang_thai !== "da_thanh_toan" && (
+              <Button
+                className="bg-green-600 hover:bg-green-700"
+                onClick={handleSendPaymentNotification}
+                disabled={isSendingNotification || !invoiceDetails}
+              >
+                <Send className="h-4 w-4 mr-2" />
+                {isSendingNotification
+                  ? "Đang gửi..."
+                  : "Gửi thông báo đóng tiền"}
+              </Button>
+            )}
             <Button
               className="bg-blue-600 hover:bg-blue-700"
               onClick={handleDownload}

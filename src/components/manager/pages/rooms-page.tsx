@@ -12,6 +12,11 @@ import {
     Users,
     Receipt
 } from "lucide-react"
+import {
+    getRoomStatusLabel,
+    getRoomStatusColor,
+    getRoomType,
+} from "@/utils/translations"
 
 interface RoomsPageProps {
     selectedHostel: any
@@ -94,29 +99,14 @@ export function RoomsPage({ selectedHostel }: RoomsPageProps) {
         }
     }, [selectedHostel?.id])
 
-    const getRoomType = (dienTich: number, giaThue: number) => {
-        if (dienTich >= 45 || giaThue >= 6000000) {
-            return { type: 'VIP', color: 'bg-purple-100 text-purple-800' }
-        } else if (dienTich >= 30 || giaThue >= 4000000) {
-            return { type: 'Đôi', color: 'bg-blue-100 text-blue-800' }
-        }
-        return { type: 'Đơn', color: 'bg-green-100 text-green-800' }
+    const getRoomTypeInfo = (dienTich: number, giaThue: number) => {
+        return getRoomType(dienTich, giaThue)
     }
 
     const getStatusBadge = (trangThai: string) => {
-        switch (trangThai) {
-            case 'da_thue':
-            case 'occupied':
-                return <Badge className="bg-red-100 text-red-800">Đã thuê</Badge>
-            case 'trong':
-            case 'available':
-                return <Badge className="bg-green-100 text-green-800">Trống</Badge>
-            case 'sua_chua':
-            case 'maintenance':
-                return <Badge className="bg-yellow-100 text-yellow-800">Sửa chữa</Badge>
-            default:
-                return <Badge className="bg-gray-100 text-gray-800">{trangThai}</Badge>
-        }
+        const label = getRoomStatusLabel(trangThai)
+        const colorClass = getRoomStatusColor(trangThai)
+        return <Badge className={colorClass}>{label}</Badge>
     }
 
     const formatCurrency = (amount: number) => {
@@ -239,7 +229,7 @@ export function RoomsPage({ selectedHostel }: RoomsPageProps) {
                     </div>
                 ) : (
                     rooms.map((room: any) => {
-                        const roomType = getRoomType(room.dien_tich, room.gia_thue)
+                        const roomType = getRoomTypeInfo(room.dien_tich, room.gia_thue)
                         return (
                             <Card key={room.id} className="hover:shadow-lg transition-shadow">
                                 <CardHeader className="pb-3">

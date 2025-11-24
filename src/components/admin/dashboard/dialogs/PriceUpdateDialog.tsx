@@ -90,10 +90,9 @@ export function PriceUpdateDialog({
             newErrors.gia_nuoc = 'Giá nước phải là số dương'
         }
 
-        if (!formData.gia_dich_vu) {
-            newErrors.gia_dich_vu = 'Vui lòng nhập giá dịch vụ'
-        } else if (isNaN(Number(formData.gia_dich_vu)) || Number(formData.gia_dich_vu) <= 0) {
-            newErrors.gia_dich_vu = 'Giá dịch vụ phải là số dương'
+        // gia_dich_vu là optional - không bắt buộc
+        if (formData.gia_dich_vu && (isNaN(Number(formData.gia_dich_vu)) || Number(formData.gia_dich_vu) < 0)) {
+            newErrors.gia_dich_vu = 'Giá dịch vụ phải là số không âm'
         }
 
         setErrors(newErrors)
@@ -109,10 +108,11 @@ export function PriceUpdateDialog({
 
         setIsSaving(true)
         try {
-            const submitData = {
+            // Chỉ gửi các cột có trong database (gia_dien, gia_nuoc)
+            // Không gửi gia_dich_vu vì cột này không tồn tại trong database
+            const submitData: { gia_dien: number; gia_nuoc: number } = {
                 gia_dien: Number(formData.gia_dien),
-                gia_nuoc: Number(formData.gia_nuoc),
-                gia_dich_vu: Number(formData.gia_dich_vu)
+                gia_nuoc: Number(formData.gia_nuoc)
             }
 
             console.log('Submitting price data:', submitData, 'for hostel:', selectedHostel.id)

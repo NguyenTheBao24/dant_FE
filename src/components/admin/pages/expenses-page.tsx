@@ -24,21 +24,24 @@ import {
     Building2,
     Settings
 } from "lucide-react"
+// @ts-ignore
+import { getExpenseTypeLabel, EXPENSE_TYPE, EXPENSE_TYPE_LABELS } from "@/utils/translations"
 
 interface ExpensesPageProps {
     selectedHostel: any
 }
 
-const EXPENSE_TYPES = [
-    "Điện nước",
-    "Bảo trì",
-    "Vệ sinh",
-    "An ninh",
-    "Marketing",
-    "Thuế",
-    "Bảo hiểm",
-    "Lương quản lý",
-    "Khác"
+// Lấy danh sách loại chi tiêu từ translations (enum values)
+const EXPENSE_TYPE_OPTIONS = [
+    EXPENSE_TYPE.DIEN_NUOC,
+    EXPENSE_TYPE.BAO_TRI,
+    EXPENSE_TYPE.VE_SINH,
+    EXPENSE_TYPE.AN_NINH,
+    EXPENSE_TYPE.MARKETING,
+    EXPENSE_TYPE.THUE,
+    EXPENSE_TYPE.BAO_HIEM,
+    EXPENSE_TYPE.LUONG_QUAN_LY,
+    EXPENSE_TYPE.KHAC,
 ]
 
 export function ExpensesPage({ selectedHostel }: ExpensesPageProps) {
@@ -327,9 +330,9 @@ export function ExpensesPage({ selectedHostel }: ExpensesPageProps) {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">Tất cả loại</SelectItem>
-                                    {EXPENSE_TYPES.map(type => (
+                                    {EXPENSE_TYPE_OPTIONS.map(type => (
                                         <SelectItem key={type} value={type}>
-                                            {type}
+                                            {getExpenseTypeLabel(type)}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -385,7 +388,7 @@ export function ExpensesPage({ selectedHostel }: ExpensesPageProps) {
                                         </TableCell>
                                         <TableCell>
                                             <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                                                {expense.loai_chi}
+                                                {getExpenseTypeLabel(expense.loai_chi)}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>

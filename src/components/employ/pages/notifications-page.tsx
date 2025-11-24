@@ -11,6 +11,13 @@ import { NotificationDetailDialog } from '@/components/employ/dialogs/Notificati
 import { getThongBaoByKhachThue } from '@/services/thong-bao.service'
 // @ts-ignore
 import { useEmployNotificationRealtime } from '@/hooks/useNotificationRealtime'
+// @ts-ignore
+import {
+    getNotificationStatusLabel,
+    getNotificationStatusColor,
+    getNotificationTypeLabel,
+    NOTIFICATION_STATUS,
+} from '@/utils/translations'
 
 interface NotificationsPageProps {
     userInfo: any
@@ -52,48 +59,26 @@ export function NotificationsPage({ userInfo, userContracts }: NotificationsPage
     }
 
     const getStatusBadge = (trangThai: string) => {
-        switch (trangThai) {
-            case 'chua_xu_ly':
-                return (
-                    <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">
-                        <Clock className="h-3 w-3 mr-1" />
-                        Chưa xử lý
-                    </Badge>
-                )
-            case 'dang_xu_ly':
-                return (
-                    <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
-                        <AlertCircle className="h-3 w-3 mr-1" />
-                        Đang xử lý
-                    </Badge>
-                )
-            case 'da_xu_ly':
-                return (
-                    <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Đã xử lý
-                    </Badge>
-                )
-            default:
-                return (
-                    <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200">
-                        {trangThai}
-                    </Badge>
-                )
+        const label = getNotificationStatusLabel(trangThai)
+        const colorClass = getNotificationStatusColor(trangThai)
+
+        let icon = <Clock className="h-3 w-3 mr-1" />
+        if (trangThai === NOTIFICATION_STATUS.DANG_XU_LY) {
+            icon = <AlertCircle className="h-3 w-3 mr-1" />
+        } else if (trangThai === NOTIFICATION_STATUS.DA_XU_LY) {
+            icon = <CheckCircle className="h-3 w-3 mr-1" />
         }
+
+        return (
+            <Badge variant="outline" className={colorClass}>
+                {icon}
+                {label}
+            </Badge>
+        )
     }
 
     const getTypeLabel = (loaiThongBao: string) => {
-        switch (loaiThongBao) {
-            case 'sua_chua':
-                return 'Sửa chữa'
-            case 'phan_anh':
-                return 'Phản ánh'
-            case 'khac':
-                return 'Khác'
-            default:
-                return loaiThongBao
-        }
+        return getNotificationTypeLabel(loaiThongBao)
     }
 
     const handleViewDetail = (notification: any) => {
