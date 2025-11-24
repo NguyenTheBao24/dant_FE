@@ -6,6 +6,7 @@ import { TenantsPage } from "@/components/manager/pages/tenants-page";
 import { RoomsPage } from "@/components/manager/pages/rooms-page";
 import { NotificationsPage } from "@/components/manager/pages/notifications-page";
 import { InvoicesPage } from "@/components/manager/pages/invoices-page";
+import { listHopDongByToaNha } from "@/services/hop-dong.service";
 
 interface ManagerDashboardProps {
   selectedHostel?: any;
@@ -17,14 +18,36 @@ export function ManagerDashboard({ selectedHostel }: ManagerDashboardProps) {
   const [occupiedRoomsCount, setOccupiedRoomsCount] = useState(0);
 
   useEffect(() => {
-    if (selectedHostel?.can_ho) {
-      // Count occupied rooms
-      const occupied = selectedHostel.can_ho.filter(
-        (room: any) =>
-          room.trang_thai === "da_thue" || room.trang_thai === "occupied"
-      ).length;
-      setOccupiedRoomsCount(occupied);
-    }
+    const loadOccupiedRoomsCount = async () => {
+      if (!selectedHostel?.id) {
+        setOccupiedRoomsCount(0);
+        return;
+      }
+
+      try {
+        // Tính số phòng đã thuê từ số hợp đồng hiệu lực
+        // Điều này đảm bảo tính nhất quán với totalTenants và activeContracts
+        const hopDongList = await listHopDongByToaNha(selectedHostel.id);
+        const activeContractsCount = hopDongList.filter(
+          (hopDong: any) => hopDong.trang_thai === "hieu_luc"
+        ).length;
+        setOccupiedRoomsCount(activeContractsCount);
+      } catch (error) {
+        console.error("Error loading occupied rooms count:", error);
+        // Fallback: đếm từ trang_thai của phòng nếu có lỗi
+        if (selectedHostel?.can_ho) {
+          const occupied = selectedHostel.can_ho.filter(
+            (room: any) =>
+              room.trang_thai === "da_thue" || room.trang_thai === "occupied"
+          ).length;
+          setOccupiedRoomsCount(occupied);
+        } else {
+          setOccupiedRoomsCount(0);
+        }
+      }
+    };
+
+    loadOccupiedRoomsCount();
   }, [selectedHostel]);
 
   const handleLogout = () => {
