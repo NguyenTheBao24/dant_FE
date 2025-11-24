@@ -28,6 +28,7 @@ import { listHopDongByToaNha } from "@/services/hop-dong.service";
 import { getThongBaoByToaNha } from "@/services/thong-bao.service";
 import { listHoaDonChuaThanhToanTrongThang } from "@/services/hoa-don.service";
 import { NotificationManagerDialog } from "@/components/manager/dialogs/NotificationManagerDialog";
+import { useManagerNotificationRealtime } from "@/hooks/useNotificationRealtime";
 import { InvoiceInfoDialog } from "@/components/admin/dashboard/dialogs/InvoiceInfoDialog";
 import {
   deleteKhachThue,
@@ -69,10 +70,10 @@ export default function Dashboard() {
   // Tính tổng số phòng đã thuê = số khách thuê active của tòa nhà hiện tại
   const occupiedRoomsCount = selectedHostel
     ? tenants
-        .filter(
-          tenant => (tenant.hostel_id || tenant.hostelId) === selectedHostel.id
-        )
-        .filter(tenant => tenant.status === "active").length
+      .filter(
+        tenant => (tenant.hostel_id || tenant.hostelId) === selectedHostel.id
+      )
+      .filter(tenant => tenant.status === "active").length
     : 0;
 
   // Tự động cập nhật occupancy khi tenants thay đổi
@@ -271,24 +272,24 @@ export default function Dashboard() {
               occupancy: occupancy,
               manager: t.quan_ly
                 ? {
-                    id: t.quan_ly.id,
-                    name: t.quan_ly.ho_ten,
-                    phone: t.quan_ly.sdt,
-                    email: t.quan_ly.email,
-                    avatar: "",
-                    experience: "",
-                    username: t.quan_ly.tai_khoan?.username,
-                    role: t.quan_ly.tai_khoan?.role,
-                    password: t.quan_ly.tai_khoan?.password,
-                  }
+                  id: t.quan_ly.id,
+                  name: t.quan_ly.ho_ten,
+                  phone: t.quan_ly.sdt,
+                  email: t.quan_ly.email,
+                  avatar: "",
+                  experience: "",
+                  username: t.quan_ly.tai_khoan?.username,
+                  role: t.quan_ly.tai_khoan?.role,
+                  password: t.quan_ly.tai_khoan?.password,
+                }
                 : {
-                    id: null,
-                    name: "Chưa có quản lý",
-                    phone: "",
-                    email: "",
-                    avatar: "",
-                    experience: "",
-                  },
+                  id: null,
+                  name: "Chưa có quản lý",
+                  phone: "",
+                  email: "",
+                  avatar: "",
+                  experience: "",
+                },
             };
           })
         );
@@ -397,47 +398,80 @@ export default function Dashboard() {
   }, [selectedHostel]);
 
   // Load notifications for admin when selectedHostel changes
+  const loadNotifications = async () => {
+    if (!selectedHostel?.id) return;
+    try {
+      const now = new Date();
+      const unpaid = await listHoaDonChuaThanhToanTrongThang(
+        selectedHostel.id,
+        now.getFullYear(),
+        now.getMonth() + 1
+      );
+      const tb = await getThongBaoByToaNha(selectedHostel.id);
+
+      const unpaidMapped = (unpaid || []).map(u => ({
+        id: `inv-${u.id}`,
+        title: `Phòng ${u.room_number || ""} chưa thanh toán`,
+        message: `${u.tenant_name ? u.tenant_name + " - " : ""}${(
+          u.so_tien || 0
+        ).toLocaleString("vi-VN")}₫`,
+        time: new Date(u.ngay_tao).toLocaleDateString("vi-VN"),
+        type: "order",
+        _source: u,
+      }));
+
+      const tenantMapped = (tb || []).slice(0, 20).map(n => ({
+        id: `tb-${n.id}`,
+        title: n.tieu_de,
+        message: n.noi_dung || "",
+        time: new Date(n.ngay_tao).toLocaleDateString("vi-VN"),
+        type: n.trang_thai === "chua_xu_ly" ? "report" : "employee",
+        _source: n,
+      }));
+
+      setChartData(prev => ({
+        ...prev,
+        notifications: [...unpaidMapped, ...tenantMapped],
+      }));
+    } catch (e) {
+      console.error("Failed to load notifications:", e);
+      setChartData(prev => ({ ...prev, notifications: [] }));
+    }
+  };
+
+  // Subscribe to realtime notifications for admin
+  useManagerNotificationRealtime(selectedHostel?.id, (event) => {
+    console.log('📡 [ADMIN NOTIFICATION] Realtime event received:', event);
+    if (event && event.event === 'INSERT') {
+      console.log('📡 [ADMIN NOTIFICATION] New notification received, reloading list...');
+      console.log('📡 [ADMIN NOTIFICATION] New notification data:', event.data);
+      // Reload lại danh sách để đảm bảo có đầy đủ dữ liệu
+      // Đợi một chút để đảm bảo database đã commit transaction
+      setTimeout(() => {
+        loadNotifications();
+      }, 1000);
+    } else if (event && event.event === 'UPDATE') {
+      console.log('📡 [ADMIN NOTIFICATION] Notification updated:', event.data);
+      // Cập nhật thông báo đã có trong danh sách
+      setChartData(prev => ({
+        ...prev,
+        notifications: prev.notifications.map(n => {
+          if (n.id === `tb-${event.data.id}`) {
+            return {
+              ...n,
+              title: event.data.tieu_de,
+              message: event.data.noi_dung || "",
+              type: event.data.trang_thai === "chua_xu_ly" ? "report" : "employee",
+              _source: event.data,
+            };
+          }
+          return n;
+        })
+      }));
+    }
+  });
+
   useEffect(() => {
-    const loadNotifications = async () => {
-      if (!selectedHostel?.id) return;
-      try {
-        const now = new Date();
-        const unpaid = await listHoaDonChuaThanhToanTrongThang(
-          selectedHostel.id,
-          now.getFullYear(),
-          now.getMonth() + 1
-        );
-        const tb = await getThongBaoByToaNha(selectedHostel.id);
-
-        const unpaidMapped = (unpaid || []).map(u => ({
-          id: `inv-${u.id}`,
-          title: `Phòng ${u.room_number || ""} chưa thanh toán`,
-          message: `${u.tenant_name ? u.tenant_name + " - " : ""}${(
-            u.so_tien || 0
-          ).toLocaleString("vi-VN")}₫`,
-          time: new Date(u.ngay_tao).toLocaleDateString("vi-VN"),
-          type: "order",
-          _source: u,
-        }));
-
-        const tenantMapped = (tb || []).slice(0, 20).map(n => ({
-          id: `tb-${n.id}`,
-          title: n.tieu_de,
-          message: n.noi_dung || "",
-          time: new Date(n.ngay_tao).toLocaleDateString("vi-VN"),
-          type: n.trang_thai === "chua_xu_ly" ? "report" : "employee",
-          _source: n,
-        }));
-
-        setChartData(prev => ({
-          ...prev,
-          notifications: [...unpaidMapped, ...tenantMapped],
-        }));
-      } catch (e) {
-        console.error("Failed to load notifications:", e);
-        setChartData(prev => ({ ...prev, notifications: [] }));
-      }
-    };
     loadNotifications();
   }, [selectedHostel?.id]);
 
@@ -719,7 +753,7 @@ export default function Dashboard() {
                 let roomsCount = 0;
                 try {
                   roomsCount = await countCanHoByToaNha(created.id);
-                } catch {}
+                } catch { }
 
                 const mappedHostel = {
                   id: created.id,
@@ -758,19 +792,19 @@ export default function Dashboard() {
                   prev.map(hostel =>
                     hostel.id === hostelId
                       ? {
-                          ...hostel,
-                          name: updated?.ten_toa || payload.ten_toa,
-                          address: updated?.dia_chi || payload.dia_chi,
-                          manager: {
-                            ...(hostel.manager || {}),
-                            id:
-                              payload.quan_ly_id ?? hostel.manager?.id ?? null,
-                            name:
-                              updated?.manager?.name ||
-                              hostel.manager?.name ||
-                              "Chưa phân công",
-                          },
-                        }
+                        ...hostel,
+                        name: updated?.ten_toa || payload.ten_toa,
+                        address: updated?.dia_chi || payload.dia_chi,
+                        manager: {
+                          ...(hostel.manager || {}),
+                          id:
+                            payload.quan_ly_id ?? hostel.manager?.id ?? null,
+                          name:
+                            updated?.manager?.name ||
+                            hostel.manager?.name ||
+                            "Chưa phân công",
+                        },
+                      }
                       : hostel
                   )
                 );
