@@ -31,6 +31,7 @@ import { NotificationManagerDialog } from "@/components/manager/dialogs/Notifica
 import { NotificationViewDialog } from "@/components/admin/dialogs/NotificationViewDialog";
 import { useManagerNotificationRealtime } from "@/hooks/useNotificationRealtime";
 import { InvoiceInfoDialog } from "@/components/admin/dashboard/dialogs/InvoiceInfoDialog";
+import { AdminChatbotWidget } from "@/components/admin/chat/AdminChatbotWidget";
 import {
   deleteKhachThue,
   updateKhachThue,
@@ -876,6 +877,7 @@ export default function Dashboard() {
         onOpenChange={o => setDialogState(prev => ({ ...prev, open: o }))}
         invoice={dialogState.data}
       />
+      <AdminChatbotWidget selectedHostel={selectedHostel} />
     </div>
   );
 }

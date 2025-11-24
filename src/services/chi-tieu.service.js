@@ -216,7 +216,8 @@ export async function deleteChiTieu(id) {
 export async function getChiTieuStatsByMonth(toaNhaId, year, month) {
     try {
         const startDate = `${year}-${month.toString().padStart(2, '0')}-01`
-        const endDate = `${year}-${month.toString().padStart(2, '0')}-31`
+        const lastDay = new Date(year, month, 0).getDate()
+        const endDate = `${year}-${month.toString().padStart(2, '0')}-${lastDay.toString().padStart(2, '0')}`
 
         const { data, error } = await supabase
             .from('chi_tieu')
