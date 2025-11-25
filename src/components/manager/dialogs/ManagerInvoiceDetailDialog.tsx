@@ -34,6 +34,8 @@ import { buildInvoiceHtml } from "@/utils/invoice-template";
 import { createThongBao } from "@/services/thong-bao.service";
 // @ts-ignore
 import { supabase } from "@/services/supabase-client";
+// @ts-ignore
+import { sendNotificationEmail } from "@/services/email.service";
 
 interface ManagerInvoiceDetailDialogProps {
   isOpen: boolean;
@@ -158,7 +160,7 @@ export function ManagerInvoiceDetailDialog({
       const { data: hopDong, error: hopDongError } = await supabase
         .from("hop_dong")
         .select(
-          "*, khach_thue:khach_thue_id(id, ho_ten, sdt), can_ho:can_ho_id(id, so_can, toa_nha_id)"
+          "*, khach_thue:khach_thue_id(id, ho_ten, sdt, email), can_ho:can_ho_id(id, so_can, toa_nha_id)"
         )
         .eq("id", hopDongId)
         .single();
@@ -207,7 +209,25 @@ export function ManagerInvoiceDetailDialog({
 
       await createThongBao(notificationData);
 
-      alert("Đã gửi thông báo thành công đến khách thuê!");
+      // Gửi email thông báo nếu khách thuê có email
+      const tenantEmail = khachThue.email;
+      if (tenantEmail && tenantEmail.trim()) {
+        try {
+          await sendNotificationEmail({
+            toEmail: tenantEmail.trim(),
+            tenantName: tenantName,
+            subject: tieuDe,
+            message: noiDung,
+          });
+          alert("Đã gửi thông báo và email thành công đến khách thuê!");
+        } catch (emailError: any) {
+          console.error("Error sending email:", emailError);
+          // Vẫn hiển thị thành công vì đã tạo thông báo trong hệ thống
+          alert("Đã gửi thông báo thành công! (Gửi email thất bại, vui lòng kiểm tra lại email của khách thuê)");
+        }
+      } else {
+        alert("Đã gửi thông báo thành công đến khách thuê! (Khách thuê chưa có email)");
+      }
     } catch (err: any) {
       console.error("Error sending payment notification:", err);
       alert(
