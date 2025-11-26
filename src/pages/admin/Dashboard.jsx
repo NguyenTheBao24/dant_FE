@@ -433,6 +433,7 @@ export default function Dashboard() {
         type: n.trang_thai === "chua_xu_ly" ? "report" : "employee",
         loai_thong_bao: n.loai_thong_bao || "khac",
         trang_thai: n.trang_thai,
+        room_label: n.can_ho?.so_can || (n.can_ho_id ? `Phòng ${n.can_ho_id}` : undefined),
         _source: n,
       }));
 

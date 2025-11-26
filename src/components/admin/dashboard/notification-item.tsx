@@ -8,6 +8,7 @@ interface NotificationItemProps {
     message: string
     time: string
     type: string
+    room_label?: string
   }
   onClick?: (notification: any) => void
 }
@@ -43,6 +44,11 @@ export function NotificationItem({ notification, onClick }: NotificationItemProp
               <p className="text-sm text-muted-foreground">{notification.time}</p>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">{notification.message}</p>
+            {notification.room_label && (
+              <p className="mt-2 text-xs text-blue-600 font-medium">
+                Phòng: {notification.room_label}
+              </p>
+            )}
           </div>
         </div>
       </CardContent>
