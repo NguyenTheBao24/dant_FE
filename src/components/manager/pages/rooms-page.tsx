@@ -3,14 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/
 import { Button } from "@/components/admin/ui/button"
 import { Badge } from "@/components/admin/ui/badge"
 import { CreateInvoiceDialog } from "@/components/manager/dialogs/CreateInvoiceDialog"
+import { ContractViewDialog } from "@/components/manager/dialogs/ContractViewDialog"
 // @ts-ignore
 import { realtimeService } from "@/services/realtime.service"
 // @ts-ignore
 import { listCanHoByToaNha } from "@/services/can-ho.service"
+// @ts-ignore
+import { listHopDongByToaNha } from "@/services/hop-dong.service"
 import {
     Home,
     Users,
-    Receipt
+    Receipt,
+    FileText
 } from "lucide-react"
 import {
     getRoomStatusLabel,
@@ -27,6 +31,10 @@ export function RoomsPage({ selectedHostel }: RoomsPageProps) {
     const [isLoading, setIsLoading] = useState(true)
     const [showCreateInvoiceDialog, setShowCreateInvoiceDialog] = useState(false)
     const [selectedRoom, setSelectedRoom] = useState<any>(null)
+    const [showContractDialog, setShowContractDialog] = useState(false)
+    const [selectedContract, setSelectedContract] = useState<any>(null)
+    const [contracts, setContracts] = useState<any[]>([])
+    const [loadingContract, setLoadingContract] = useState(false)
 
     useEffect(() => {
         async function loadRooms() {
@@ -47,6 +55,24 @@ export function RoomsPage({ selectedHostel }: RoomsPageProps) {
             }
         }
         loadRooms()
+    }, [selectedHostel?.id])
+
+    // Load contracts when hostel changes
+    useEffect(() => {
+        async function loadContracts() {
+            if (!selectedHostel?.id) {
+                setContracts([])
+                return
+            }
+            try {
+                const contractsList = await listHopDongByToaNha(selectedHostel.id)
+                setContracts(contractsList || [])
+            } catch (e) {
+                console.error('Failed to load contracts:', e)
+                setContracts([])
+            }
+        }
+        loadContracts()
     }, [selectedHostel?.id])
 
     // Realtime updates: cập nhật danh sách phòng ngay khi có thay đổi
@@ -272,7 +298,36 @@ export function RoomsPage({ selectedHostel }: RoomsPageProps) {
                                             <Receipt className="h-3 w-3 mr-1" />
                                             Tạo hóa đơn
                                         </Button>
-
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="flex-1"
+                                            onClick={async () => {
+                                                // Tìm hợp đồng hiệu lực của phòng này
+                                                const roomContract = contracts.find((c: any) =>
+                                                    c.can_ho_id === room.id &&
+                                                    (c.trang_thai === 'hieu_luc' || c.trang_thai === 'active')
+                                                )
+                                                if (roomContract) {
+                                                    // Thêm thông tin tòa nhà và quản lý từ selectedHostel
+                                                    const contractWithDetails = {
+                                                        ...roomContract,
+                                                        toa_nha: selectedHostel?.ten_toa ? {
+                                                            ten_toa: selectedHostel.ten_toa || selectedHostel.ten || selectedHostel.name,
+                                                            quan_ly: selectedHostel.quan_ly
+                                                        } : null
+                                                    }
+                                                    setSelectedContract(contractWithDetails)
+                                                    setShowContractDialog(true)
+                                                } else {
+                                                    alert('Phòng này chưa có hợp đồng hiệu lực')
+                                                }
+                                            }}
+                                            title="Xem hợp đồng thuê phòng"
+                                        >
+                                            <FileText className="h-3 w-3 mr-1" />
+                                            Hợp đồng
+                                        </Button>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -291,6 +346,13 @@ export function RoomsPage({ selectedHostel }: RoomsPageProps) {
                     console.log('Invoice created successfully')
                     // Có thể reload data hoặc thực hiện action khác
                 }}
+            />
+
+            {/* Contract View Dialog */}
+            <ContractViewDialog
+                isOpen={showContractDialog}
+                onOpenChange={setShowContractDialog}
+                contract={selectedContract}
             />
         </div>
     )
