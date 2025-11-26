@@ -7,7 +7,8 @@ import {
     User,
     LogOut,
     UserCircle,
-    Bell
+    Bell,
+    Home
 } from "lucide-react"
 
 interface EmploySidebarProps {
@@ -95,7 +96,17 @@ export function EmploySidebar({
                     <span className="font-semibold">Hóa đơn</span>
                 </Button>
 
-
+                <Button
+                    variant={activeTab === "room-info" ? "default" : "ghost"}
+                    className={`w-full justify-start h-12 transition-all duration-300 rounded-xl ${activeTab === "room-info"
+                        ? "bg-green-600 text-white shadow-lg hover:shadow-xl"
+                        : "hover:bg-gray-100 hover:shadow-md"
+                        }`}
+                    onClick={() => onTabChange("room-info")}
+                >
+                    <Home className="mr-3 h-5 w-5" />
+                    <span className="font-semibold">Thông tin phòng</span>
+                </Button>
 
                 <Button
                     variant={activeTab === "notifications" ? "default" : "ghost"}

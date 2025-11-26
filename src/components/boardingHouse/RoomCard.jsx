@@ -39,9 +39,41 @@ const RoomCard = ({ room, index, onBookRoom, onScrollToSection }) => {
                 <div className="relative bg-white border border-slate-200 rounded-xl p-10 shadow-sm hover:shadow-md transition-all duration-200">
                     {/* Tiêu đề phòng */}
                     <div className="mb-8">
-                        <h4 className="text-3xl font-bold text-slate-900 mb-3">
-                            {room.name}
-                        </h4>
+                        <div className="flex items-center gap-3 mb-3 flex-wrap">
+                            <h4 className="text-3xl font-bold text-slate-900">
+                                {room.name}
+                            </h4>
+                            {/* Tag thông tin phòng */}
+                            {(() => {
+                                let tagConfig = {};
+                                if (room.id === 1 || room.name.includes('Đơn')) {
+                                    tagConfig = {
+                                        label: 'Phòng Đơn',
+                                        className: 'bg-blue-100 text-blue-800 border-blue-300'
+                                    };
+                                } else if (room.id === 2 || room.name.includes('Đôi')) {
+                                    tagConfig = {
+                                        label: 'Phòng Đôi',
+                                        className: 'bg-purple-100 text-purple-800 border-purple-300'
+                                    };
+                                } else if (room.id === 3 || room.name.includes('VIP')) {
+                                    tagConfig = {
+                                        label: 'Phòng VIP',
+                                        className: 'bg-amber-100 text-amber-800 border-amber-300'
+                                    };
+                                }
+                                
+                                return tagConfig.label ? (
+                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${tagConfig.className}`}>
+                                        {tagConfig.label}
+                                    </span>
+                                ) : null;
+                            })()}
+                            {/* Tag diện tích */}
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-300">
+                                {room.area}
+                            </span>
+                        </div>
                         <div className="w-16 h-0.5 bg-slate-300 rounded-full"></div>
                     </div>
 

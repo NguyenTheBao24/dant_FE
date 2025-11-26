@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/card"
 import {
     DollarSign,
@@ -6,8 +7,7 @@ import {
     AlertCircle,
     Receipt
 } from "lucide-react"
-import { buildContractHtml } from "@/utils/tenant.utils"
-import { generateAndDownloadPDF } from "@/utils/pdf.utils"
+import { ContractViewDialog } from "../dialogs/ContractViewDialog"
 
 interface OverviewPageProps {
     userInfo: any
@@ -16,6 +16,8 @@ interface OverviewPageProps {
 }
 
 export function OverviewPage({ userInfo, userContracts, invoiceData }: OverviewPageProps) {
+    const [showContractDialog, setShowContractDialog] = useState(false)
+    const [selectedContract, setSelectedContract] = useState<any>(null)
 
     if (!userInfo) {
         return (
@@ -100,39 +102,28 @@ export function OverviewPage({ userInfo, userContracts, invoiceData }: OverviewP
 
                 <Card
                     className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 cursor-pointer hover:shadow-sm transition"
-                    onClick={async () => {
-                        const html = buildContractHtml({
-                            hostelName: currentContract?.toa_nha?.ten_toa || currentContract?.can_ho?.toa_nha?.ten_toa,
-                            roomNumber: currentContract?.can_ho?.so_can,
-                            tenantName: userInfo?.ho_ten,
-                            phone: userInfo?.sdt,
-                            email: userInfo?.email,
-                            startDate: currentContract?.ngay_bat_dau,
-                            rentAmount: currentContract?.can_ho?.gia_thue,
-                            contractId: currentContract?.id,
-                            managerName: currentContract?.toa_nha?.quan_ly?.ho_ten,
-                            managerPhone: currentContract?.toa_nha?.quan_ly?.sdt,
-                            managerEmail: currentContract?.toa_nha?.quan_ly?.email
-                        })
-
-                        try {
-                            await generateAndDownloadPDF(html, `hop-dong-${userInfo?.ho_ten}-${currentContract?.can_ho?.so_can}.pdf`)
-                        } catch (error) {
-                            console.error('Error generating PDF:', error)
-                            alert('Có lỗi khi tạo PDF. Vui lòng thử lại.')
+                    onClick={() => {
+                        if (currentContract) {
+                            setSelectedContract(currentContract)
+                            setShowContractDialog(true)
                         }
                     }}
                     role="button"
                     tabIndex={0}
                     onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') (e.currentTarget as any).click()
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            if (currentContract) {
+                                setSelectedContract(currentContract)
+                                setShowContractDialog(true)
+                            }
+                        }
                     }}
                 >
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-purple-600">Xem hợp đồng</p>
-                                <p className="text-xs text-purple-600 mt-1">Nhấn để mở hợp đồng thuê của bạn</p>
+                                <p className="text-xs text-purple-600 mt-1">Nhấn để xem hợp đồng thuê của bạn</p>
                             </div>
                         </div>
                     </CardContent>
@@ -324,6 +315,14 @@ export function OverviewPage({ userInfo, userContracts, invoiceData }: OverviewP
                     </CardContent>
                 </Card>
             )}
+
+            {/* Contract View Dialog */}
+            <ContractViewDialog
+                isOpen={showContractDialog}
+                onOpenChange={setShowContractDialog}
+                contract={selectedContract}
+                userInfo={userInfo}
+            />
         </div>
     )
 }
