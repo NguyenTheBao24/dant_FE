@@ -172,7 +172,7 @@ export async function createThongBao(thongBaoData) {
     return data
 }
 
-export async function getThongBaoByToaNha(toaNhaId, trangThai = null) {
+export async function getThongBaoByToaNha(toaNhaId, trangThai = null, canHoId = null) {
     if (!isReady()) return []
     let query = supabase
         .from('thong_bao')
@@ -184,6 +184,7 @@ export async function getThongBaoByToaNha(toaNhaId, trangThai = null) {
         .eq('toa_nha_id', toaNhaId)
         .order('ngay_tao', { ascending: false })
     if (trangThai) query = query.eq('trang_thai', trangThai)
+    if (canHoId) query = query.eq('can_ho_id', canHoId)
     const { data, error } = await query
     if (error) throw error
     return data || []
